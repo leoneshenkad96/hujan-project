@@ -28,6 +28,7 @@ export async function PATCH(req:NextRequest,{params}:Context){
  const [target]=await db.select({id:users.id,role:users.role}).from(users).where(and(eq(users.id,id),eq(users.organizationId,auth.user.organizationId))).limit(1);
  if(!target)return fail('User not found',404);
  if((target.role==='owner'||update.role==='owner')&&auth.user.role!=='owner')return fail('Only owner may manage owner accounts',403);
+ if(target.role==='owner'&&(update.active===false||(update.role!==undefined&&update.role!=='owner')))return fail('Owner accounts cannot be deactivated or demoted',409);
  if(id===auth.user.id&&(update.active===false||(update.role!==undefined&&update.role!==auth.user.role)))return fail('Cannot revoke your own account or role',409);
  // A single PostgreSQL statement makes user changes and session revocation atomic.
  // Recheck the owner's privilege against the current row to close a concurrent role-edit race.
@@ -45,6 +46,7 @@ export async function PATCH(req:NextRequest,{params}:Context){
    password_hash=COALESCE(${changedPassword}::text,password_hash)
   WHERE id=${id}::uuid AND organization_id=${auth.user.organizationId}::uuid
    AND (${auth.user.role==='owner'}::boolean OR role<>'owner')
+   AND (role<>'owner' OR (${changedActive}::boolean IS DISTINCT FROM false AND (${changedRole}::varchar IS NULL OR ${changedRole}::varchar='owner')))
   RETURNING id,name,email,role,active
  ), revoked AS (
   UPDATE auth_sessions SET revoked_at=NOW()
