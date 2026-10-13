@@ -1,0 +1,29 @@
+name: Commit Verified Release Lockfile
+on:
+  push:
+    branches: ['feature/16-release-readiness']
+    paths: ['.github/workflows/commit-release-lock.yml']
+permissions:
+  contents: write
+jobs:
+  commit-lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm install --package-lock-only --no-audit --no-fund
+      - name: Commit reproducible lockfile
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore(release): lock audited dependency graph"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/feature/16-release-readiness
