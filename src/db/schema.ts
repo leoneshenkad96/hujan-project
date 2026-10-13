@@ -202,3 +202,14 @@ export const contracts=pgTable('contracts',{
  signedAt:timestamp('signed_at',{withTimezone:true}),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
 },t=>[uniqueIndex('contract_org_number_idx').on(t.organizationId,t.number),uniqueIndex('contract_quotation_idx').on(t.quotationId),index('contract_event_idx').on(t.eventId)]);
+
+/** Single-use email activation challenge. Store only a SHA-256 token digest. */
+export const activationTokens=pgTable('auth_activation_tokens',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ userId:uuid('user_id').notNull().references(()=>users.id),
+ organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
+ tokenHash:varchar('token_hash',{length:64}).notNull().unique(),
+ expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),
+ consumedAt:timestamp('consumed_at',{withTimezone:true}),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
+},t=>[index('activation_tokens_user_idx').on(t.userId),index('activation_tokens_expiry_idx').on(t.expiresAt)]);
