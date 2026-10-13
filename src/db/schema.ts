@@ -124,3 +124,14 @@ export const taskRelations=relations(tasks,({one})=>({event:one(events,{fields:[
 export const costRelations=relations(eventCosts,({one})=>({event:one(events,{fields:[eventCosts.eventId],references:[events.id]})}));
 export const invoiceRelations=relations(invoices,({one,many})=>({event:one(events,{fields:[invoices.eventId],references:[events.id]}),payments:many(payments)}));
 export const paymentRelations=relations(payments,({one})=>({invoice:one(invoices,{fields:[payments.invoiceId],references:[invoices.id]})}));
+
+// Opaque, server-side revocable sessions. Never store the plaintext cookie token.
+export const authSessions = pgTable('auth_sessions',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
+ userId:uuid('user_id').notNull().references(()=>users.id),
+ tokenHash:varchar('token_hash',{length:64}).notNull().unique(),
+ expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),
+ revokedAt:timestamp('revoked_at',{withTimezone:true}),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
+},t=>[index('auth_sessions_user_idx').on(t.userId),index('auth_sessions_expiry_idx').on(t.expiresAt)]);
