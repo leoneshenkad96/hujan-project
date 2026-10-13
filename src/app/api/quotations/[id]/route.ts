@@ -1,4 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
+import { isTrustedOrigin } from '@/lib/security';
 import {and,eq} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
 import {quotations} from '@/db/schema';
@@ -9,7 +10,7 @@ const fail=(error:string,status:number)=>NextResponse.json({error},{status,heade
 type C={params:Promise<{id:string}>};
 const transitions:Record<string,string[]>={draft:['sent'],sent:['accepted','rejected','expired'],accepted:[],rejected:[],expired:[]};
 export async function PATCH(req:NextRequest,{params}:C){
- const origin=req.headers.get('origin');if(origin&&origin!==req.nextUrl.origin)return fail('Origin not allowed',403);
+ if(!isTrustedOrigin(req.headers.get('origin'),req.url,process.env.NODE_ENV==='production'))return fail('Origin not allowed',403);
  try{const a=await requirePermission('clients:write');if(a.error)return fail(a.error,a.error==='unauthorized'?401:403);
  const {id}=await params;if(!uuid.test(id))return fail('Invalid ID',400);
  const input=await req.json().catch(()=>null);if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).length!==1)return fail('Invalid update',400);
