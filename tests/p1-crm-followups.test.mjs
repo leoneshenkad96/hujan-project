@@ -16,5 +16,5 @@ test('CRM follow-up migration includes tenant ownership guard and indexes',()=>{
  assert.match(sql,/u.organization_id=NEW.organization_id/);
  assert.match(sql,/lead_follow_ups_lead_created_idx/);
  const journal=JSON.parse(readFileSync('drizzle/meta/_journal.json','utf8'));
- assert.equal(journal.entries.at(-1).tag,'0015_lead_follow_ups');
+ assert.equal(journal.entries.find(x=>x.idx===15).tag,'0015_lead_follow_ups');
 });
