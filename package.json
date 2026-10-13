@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:check": "drizzle-kit check",
-    "auth:hash": "node scripts/hash-password.mjs"
+    "auth:hash": "node scripts/hash-password.mjs",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs"
   },
   "dependencies": {
     "next": "15.5.12",
