@@ -1,2 +1,2 @@
-# Event-Organizer-ERP-
+# Event-Organizer-ERP
 ERP Event Organizer for Vinca
