@@ -10,7 +10,7 @@ check('Next.js dependency pinned',/^\d+\.\d+\.\d+$/.test(pkg.dependencies.next))
 check('Database migration config present',existsSync(resolve(root,'drizzle.config.ts')));
 check('Migration journal present',existsSync(resolve(root,'drizzle/meta/_journal.json')));
 const journal=JSON.parse(readFileSync(resolve(root,'drizzle/meta/_journal.json'),'utf8'));
-check('Nine reviewed migrations present',journal.entries.length===9);
+check('Ten reviewed migrations present',journal.entries.length===10);
 for(const entry of journal.entries)check('Migration '+entry.tag,existsSync(resolve(root,'drizzle',entry.tag+'.sql')));
 check('No environment secret file tracked in this preflight',!existsSync(resolve(root,'.env.production')));
 if(process.env.RELEASE_ENV==='production'){
