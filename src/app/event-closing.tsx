@@ -24,6 +24,7 @@ export default function EventClosing({eventId,status,canWrite,onUpdated}:{eventI
    const [allTasks,c]=await Promise.all([loadTasks(),fetch('/api/rundown?eventId='+eventQuery,{cache:'no-store'})]);
    if(!c.ok)throw new Error(await problem(c));
    const cueData=await c.json() as Result;
+   if(cueData.hasMore)throw new Error('Rundown lebih dari 500 segmen; checklist belum mencakup seluruh data.');
    const taskData={items:allTasks};
    setTasks(taskData.items);setCues(cueData.items);
   }catch(e){setError(e instanceof Error?e.message:'Checklist tidak dapat dimuat')}finally{setLoading(false)}
