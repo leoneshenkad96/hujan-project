@@ -16,5 +16,5 @@ try{
  const owners=await sql`SELECT count(*)::int AS n FROM users u JOIN organizations o ON o.id=u.organization_id WHERE o.slug='vinca-uat' AND u.role='owner'`;
  const dup=Number(duplicates[0].n),applied=Number(state[0].applied),hasIndex=Number(index[0].n)===1;
  stdout.write(JSON.stringify({normalizedEmailDuplicates:dup,appliedMigrations:applied,normalizedIndexInstalled:hasIndex,uatOwnerCount:Number(owners[0].n)})+'\n');
- if(dup!==0||Number(owners[0].n)!==1||applied!==13||!hasIndex)process.exitCode=2;
+ if(dup!==0||Number(owners[0].n)!==1||applied!==15||!hasIndex)process.exitCode=2;
 }catch{stderr.write('UAT verification failed; check database selection privately.\n');process.exitCode=1}
