@@ -27,6 +27,8 @@ async function readSecret(){
 try{
  const password=await readSecret();
  if(password.length<12||password.length>256)throw Error('Password length invalid');
+ const confirmation=await readSecret();
+ if(password!==confirmation)throw Error('Password confirmation does not match');
  const salt=randomBytes(16);
  const hash='scrypt$'+salt.toString('hex')+'$'+scryptSync(password,salt,64,{N:16384,r:8,p:1,maxmem:32*1024*1024}).toString('hex');
  const db=neon(uri);
