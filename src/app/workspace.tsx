@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { LayoutDashboard, CalendarDays, Users, ListTodo, Wallet, Truck, Clapperboard, FileText, Settings, Menu, X, Bell } from 'lucide-react';
+import { LayoutDashboard, CalendarDays, Users, ListTodo, Wallet, Truck, Clapperboard, UserRoundCheck, FileText, Settings, Menu, X, Bell } from 'lucide-react';
 import './workspace.css';
 import { can } from '@/lib/permissions';
 import CrmWorkspace from './crm-workspace';
+import CrewWorkspace from './crew-workspace';
 import EventProjects from './event-projects';
 import TaskBoard from './task-board';
 import Procurement from './procurement';
@@ -15,18 +16,18 @@ import InvoicesWorkspace from './invoices-workspace';
 import ProfitabilityWorkspace from './profitability-workspace';
 import DashboardWorkspace from './dashboard-workspace';
 
-const nav=[{group:'WORKSPACE',items:[['dashboard','Dashboard',LayoutDashboard],['events','Event Projects',CalendarDays],['crm','CRM & Clients',Users],['sales','Quotations & Contracts',FileText],['tasks','Tasks & Timeline',ListTodo]]},{group:'OPERATIONS',items:[['budget','Budget & RAB',Wallet],['vendors','Vendor & PO',Truck],['rundown','Rundown & Show',Clapperboard]]},{group:'FINANCIAL',items:[['finance','Finance & Invoices',FileText],['profitability','Profitability',Wallet]]},{group:'SYSTEM',items:[['settings','Users & Settings',Settings]]}] as const;
-type Page='dashboard'|'events'|'crm'|'sales'|'profitability'|'tasks'|'budget'|'vendors'|'rundown'|'finance'|'settings';
+const nav=[{group:'WORKSPACE',items:[['dashboard','Dashboard',LayoutDashboard],['events','Event Projects',CalendarDays],['crm','CRM & Clients',Users],['sales','Quotations & Contracts',FileText],['tasks','Tasks & Timeline',ListTodo]]},{group:'OPERATIONS',items:[['budget','Budget & RAB',Wallet],['vendors','Vendor & PO',Truck],['rundown','Rundown & Show',Clapperboard],['crew','Crew Scheduling',UserRoundCheck]]},{group:'FINANCIAL',items:[['finance','Finance & Invoices',FileText],['profitability','Profitability',Wallet]]},{group:'SYSTEM',items:[['settings','Users & Settings',Settings]]}] as const;
+type Page='dashboard'|'events'|'crm'|'sales'|'profitability'|'tasks'|'budget'|'vendors'|'rundown'|'crew'|'finance'|'settings';
 export default function Workspace({role}:{role:string}){
  const [page,setPage]=useState<Page>(can(role,'dashboard:read')?'dashboard':'events');const [open,setOpen]=useState(false);
  
- const visible=(id:string)=>({dashboard:can(role,'dashboard:read'),events:can(role,'events:read'),crm:can(role,'clients:read'),sales:can(role,'clients:read'),tasks:can(role,'events:read'),budget:can(role,'finance:read'),vendors:can(role,'vendors:read'),rundown:can(role,'events:read'),finance:can(role,'finance:read'),profitability:can(role,'finance:read'),settings:can(role,'users:manage')} as Record<string,boolean>)[id]??false;
+ const visible=(id:string)=>({dashboard:can(role,'dashboard:read'),events:can(role,'events:read'),crm:can(role,'clients:read'),sales:can(role,'clients:read'),tasks:can(role,'events:read'),budget:can(role,'finance:read'),vendors:can(role,'vendors:read'),rundown:can(role,'events:read'),crew:can(role,'events:read'),finance:can(role,'finance:read'),profitability:can(role,'finance:read'),settings:can(role,'users:manage')} as Record<string,boolean>)[id]??false;
  
  const [notice,setNotice]=useState('');
  async function logout(){try{const r=await fetch('/api/auth/logout',{method:'POST'});if(r.ok){window.location.assign('/login');return}setNotice('Logout gagal. Coba kembali.')}catch{setNotice('Koneksi terputus saat logout.')}}
  
  const selectPage=(p:Page)=>{if(!visible(p))return;if(p==='settings'){window.location.assign('/users');return}setPage(p);setOpen(false);};
- const currentPageName=({dashboard:'Dashboard',events:'Event Projects',crm:'CRM & Clients',sales:'Quotations & Contracts',tasks:'Tasks & Timeline',budget:'Budget & RAB',vendors:'Vendor & PO',rundown:'Rundown & Show',finance:'Finance & Invoices',profitability:'Profitability',settings:'Users & Settings'} satisfies Record<Page,string>)[page];
+ const currentPageName=({dashboard:'Dashboard',events:'Event Projects',crm:'CRM & Clients',sales:'Quotations & Contracts',tasks:'Tasks & Timeline',budget:'Budget & RAB',vendors:'Vendor & PO',rundown:'Rundown & Show',crew:'Crew Scheduling',finance:'Finance & Invoices',profitability:'Profitability',settings:'Users & Settings'} satisfies Record<Page,string>)[page];
  function renderContent(){
   if(page==='dashboard')return <DashboardWorkspace />;
     if(page==='events')return <EventProjects canWrite={can(role,'events:write')} />;
@@ -36,6 +37,7 @@ export default function Workspace({role}:{role:string}){
   if(page==='budget')return <BudgetWorkspace canWrite={can(role,'finance:write')} />;
   if(page==='vendors')return <Procurement canWrite={can(role,'vendors:write')} />;
   if(page==='rundown')return <RundownWorkspace canWrite={can(role,'rundown:write')} />;
+  if(page==='crew')return <CrewWorkspace canWrite={can(role,'tasks:write')} />;
   if(page==='finance')return <InvoicesWorkspace canWrite={can(role,'finance:write')} />;
   if(page==='profitability')return <ProfitabilityWorkspace />;
   return null;
