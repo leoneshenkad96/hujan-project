@@ -149,6 +149,7 @@ export const authLoginLimits = pgTable('auth_login_limits',{
 
 export const purchaseOrderStatus=pgEnum('purchase_order_status',['draft','issued','partially_received','received','cancelled']);
 export const purchaseOrders=pgTable('purchase_orders',{
+ matchedActual:numeric('matched_actual',{precision:18,scale:2}).notNull().default('0'),
  id:uuid('id').primaryKey().defaultRandom(),
  organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
  eventId:uuid('event_id').notNull().references(()=>events.id),
