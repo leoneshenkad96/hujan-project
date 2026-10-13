@@ -157,3 +157,19 @@ export const purchaseOrders=pgTable('purchase_orders',{
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
  updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow()
 },t=>[uniqueIndex('purchase_orders_org_number_idx').on(t.organizationId,t.number),index('purchase_orders_event_idx').on(t.eventId),index('purchase_orders_vendor_idx').on(t.vendorId)]);
+
+export const rundownStatus=pgEnum('rundown_status',['planned','standby','on_air','done','skipped']);
+export const rundownItems=pgTable('rundown_items',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
+ eventId:uuid('event_id').notNull().references(()=>events.id),
+ position:integer('position').notNull(),
+ title:varchar('title',{length:200}).notNull(),
+ startTime:varchar('start_time',{length:5}).notNull(),
+ endTime:varchar('end_time',{length:5}).notNull(),
+ cue:varchar('cue',{length:240}),
+ picId:uuid('pic_id').references(()=>users.id),
+ status:rundownStatus('status').notNull().default('planned'),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+ updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow()
+},t=>[index('rundown_event_position_idx').on(t.eventId,t.position),index('rundown_org_idx').on(t.organizationId)]);
