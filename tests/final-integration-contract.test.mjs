@@ -5,10 +5,10 @@ const routes=['/api/auth/login','/api/auth/logout','/api/auth/me','/api/crm/clie
 test('every integrated ERP module has a committed API route',()=>{
  for(const route of routes)assert.ok(existsSync('src/app'+route+'/route.ts'),route);
 });
-test('all seven canonical schema migrations are present and ordered',()=>{
+test('all eight canonical schema migrations are present and ordered',()=>{
  const entries=JSON.parse(readFileSync('drizzle/meta/_journal.json','utf8')).entries;
- assert.equal(entries.length,7);
- assert.deepEqual(entries.map(x=>Number(x.tag.substring(0,4))),[0,1,2,3,4,5,6]);
+ assert.equal(entries.length,8);
+ assert.deepEqual(entries.map(x=>Number(x.tag.substring(0,4))),[0,1,2,3,4,5,6,7]);
 });
 test('release CI has neither production deployment nor database write action',()=>{
  const content=readFileSync('.github/workflows/release-readiness.yml','utf8');
