@@ -27,14 +27,12 @@ export async function POST(request:NextRequest){
   const db=getDatabase();
   // Email-only login MUST fail closed for duplicate active identities across tenants.
   // An administrator must resolve duplicates before this login method can be used.
-  const rows=await db.select({id:users.id,organizationId:users.organizationId,email:users.email,name:users.name,role:users.role,hash:users.passwordHash})
+  const rows=await db.select({id:users.id,organizationId:users.organizationId,email:users.email,name:users.name,role:users.role,hash:users.passwordHash,active:users.active})
    .from(users).where(eq(users.email,normalizedEmail)).limit(2);
   const found=rows.length===1?rows[0]:null;
   const valid=await verifyPassword(password,found?.hash??null);
   if(!found||!valid)return NextResponse.json({error:'Invalid credentials'},{status:401,headers:{'Cache-Control':'no-store'}});
-  // The account must still be active. Never reveal account existence.
-  const [active]=await db.select({id:users.id}).from(users).where(eq(users.id,found.id)).limit(1);
-  if(!active)return NextResponse.json({error:'Invalid credentials'},{status:401});
+  if(!found.active)return NextResponse.json({error:'Invalid credentials'},{status:401,headers:{'Cache-Control':'no-store'}});
   await newSession(found);
   return NextResponse.json({user:{id:found.id,email:found.email,name:found.name,role:found.role}},{headers:{'Cache-Control':'no-store'}});
  }catch{return NextResponse.json({error:'Authentication unavailable'},{status:503})}
