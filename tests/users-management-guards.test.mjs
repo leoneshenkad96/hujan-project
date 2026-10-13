@@ -16,3 +16,9 @@ test('account and session changes share a single atomic SQL statement',()=>{
  assert.match(update,/WITH changed AS[\s\S]*revoked AS[\s\S]*UPDATE auth_sessions/);
  assert.match(update,/AND EXISTS\(SELECT 1 FROM changed\)/);
 });
+
+test('owner accounts cannot be disabled or demoted, including under a concurrent role update',()=>{
+ assert.match(update,/Owner accounts cannot be deactivated or demoted/);
+ assert.match(update,/role<>'owner' OR \(\$\{changedActive\}/);
+ assert.match(update,/IS DISTINCT FROM false/);
+});
