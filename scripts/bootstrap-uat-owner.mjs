@@ -25,13 +25,15 @@ async function readSecret(prompt='New Owner password (hidden, 12-256 chars): '){
  })}finally{stdin.setRawMode(false)}
 }
 try{
+ const db=neon(uri);
+ const scope=await db`SELECT current_setting('neon.project_id',true) AS project_id,current_setting('neon.branch_id',true) AS branch_id,current_database() AS database_name`;
+ if(scope.length!==1||scope[0].project_id!=='fancy-cell-64250119'||scope[0].branch_id!=='br-long-wildflower-b3nsciay'||scope[0].database_name!=='eventorganizer')throw Error('Connection is not the expected isolated Vinca UAT database');
  const password=await readSecret();
  if(password.length<12||password.length>256)throw Error('Password length invalid');
  const confirmation=await readSecret('Confirm Owner password (hidden): ');
  if(password!==confirmation)throw Error('Password confirmation does not match');
  const salt=randomBytes(16);
  const hash='scrypt$'+salt.toString('hex')+'$'+scryptSync(password,salt,64,{N:16384,r:8,p:1,maxmem:32*1024*1024}).toString('hex');
- const db=neon(uri);
  const identity=await db`SELECT u.id,u.active,u.password_hash FROM users u JOIN organizations o ON o.id=u.organization_id WHERE o.slug='vinca-uat' AND lower(trim(u.email))='leoneshenkad@gmail.com' AND u.role='owner' LIMIT 2`;
  if(identity.length!==1)throw Error('Expected exactly one UAT Owner');
  if(identity[0].active||identity[0].password_hash)throw Error('Owner already provisioned');
