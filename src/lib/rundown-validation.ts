@@ -17,3 +17,14 @@ export function parseRundownPatch(v:unknown){
  if(keys.length!==1||keys[0]!=='status'||typeof x.status!=='string'||!RUNDOWN_STATES.includes(x.status as RundownState))return null;
  return {status:x.status as RundownState};
 }
+
+export const RUNDOWN_TRANSITIONS:Record<RundownState,readonly RundownState[]>={
+ planned:['standby','skipped'],
+ standby:['on_air','skipped'],
+ on_air:['done','skipped'],
+ done:[],
+ skipped:[]
+};
+export function canTransitionRundown(from:RundownState,to:RundownState):boolean {
+ return RUNDOWN_TRANSITIONS[from].includes(to);
+}
