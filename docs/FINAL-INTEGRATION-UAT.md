@@ -172,3 +172,16 @@ No Neon SQL writes, Vercel operations, production schema or main branch changes 
 - [ ] Runtime login, session invalidation, 2-tenant isolation, financial write concurrency and restore drills remain mandatory.
 
 **Migration `0009_email_global_unique` is applied on UAT; do not run it a second time.** Prior checklist entries describing 9 migrations or an absent index are historical preflight observations, not current state.
+
+
+### Mobile-only P0 audit checkpoint (read-only Neon UAT, 2026-10-13)
+- [x] Confirmed isolated Neon UAT branch `br-long-wildflower-b3nsciay`, 10 migration ledger entries.
+- [x] Integrity SQL found 0 orphan user references, 0 mismatched event/client organizations, 0 mismatched invoice/event organizations, 0 mismatched payment/invoice organizations.
+- [x] Invoice balance invariants (nonpositive amount, negative paid amount, paid exceeding total) show 0 violations.
+- [x] Payment amount invariant (nonpositive payment) shows 0 violations.
+- [x] Added reusable `scripts/audit-uat-integrity.mjs` and static safety checks; SQL is SELECT-only, scoped to the expected Neon project/branch/database.
+- [ ] All events, invoices and payments are currently empty and UAT has no login-ready owner. Empty-table integrity checks **do not** prove end-to-end business behavior.
+- [ ] Activate Owner through trusted private TTY, then provision second tenant and run isolated HTTP/auth and finance UAT.
+- [ ] Verify the latest CI workflow for the added audit script and tests before marking the commit green.
+
+No Vercel, main branch merge, production database write or creation of test fixtures took place.
