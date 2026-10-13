@@ -1,0 +1,2 @@
+ALTER TABLE "event_costs" ADD COLUMN "purchase_order_id" uuid;
+ALTER TABLE "event_costs" ADD CONSTRAINT "event_costs_purchase_order_id_purchase_orders_id_fk" FOREIGN KEY ("purchase_order_id") REFERENCES "public"."purchase_orders"("id") ON DELETE no action ON UPDATE no action;
