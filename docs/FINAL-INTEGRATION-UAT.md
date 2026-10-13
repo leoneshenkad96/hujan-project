@@ -146,3 +146,17 @@ This checkpoint replaces the old email-activation workflow: **Resend is not requ
 - [ ] Verify migration and restore readiness before production GO.
 
 **Scope:** GitHub integration branch only; no Vercel calls, Neon writes, main merge or production deploy. CI for these recent edits must be checked separately. Current UAT readiness: **NO-GO**.
+
+
+### UAT branch database preflight — 2026-10-13 (read-only verified)
+- [x] Correct isolated Vinca UAT branch explicitly scoped in Neon read-only queries.
+- [x] Duplicate normalized emails query returned **0 duplicates**.
+- [x] UAT currently has **1 user**, **0 active password-backed accounts**, and **9 applied Drizzle migrations**.
+- [x] Existing user indexes are `users_pkey` and `users_org_email_idx`; new global normalized email index is **not applied**.
+- [x] Migration `0009_email_global_unique` and 10-entry journal/snapshot are committed in GitHub, and preceding GitHub CI completed successfully.
+- [x] Owner bootstrap CLI now requires explicit UAT acknowledgement, private TTY, hidden password + confirmation, and refuses to overwrite an already-active owner.
+- [ ] Apply migration **with Drizzle migration history**, after scoped UAT backup/restore plan; do not execute an ad-hoc index creation that leaves Drizzle's ledger out of sync.
+- [ ] Verify index appears, Drizzle migration count becomes 10, then use a trusted UAT-only terminal to activate Owner without transmitting secrets through chat or GitHub.
+- [ ] Complete login, tenant isolation, event, finance and restore UAT before production sign-off.
+
+No Neon SQL writes, Vercel operations, production schema or main branch changes were performed for this checkpoint.
