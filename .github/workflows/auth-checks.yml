@@ -22,6 +22,8 @@ jobs:
         run: npm run typecheck
       - name: ESLint
         run: npm run lint
+      - name: Authorization unit tests
+        run: npm test
       - name: Next.js build
         run: npm run build
       - name: Drizzle schema integrity
