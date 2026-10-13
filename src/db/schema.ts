@@ -173,3 +173,31 @@ export const rundownItems=pgTable('rundown_items',{
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
  updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow()
 },t=>[index('rundown_event_position_idx').on(t.eventId,t.position),index('rundown_org_idx').on(t.organizationId)]);
+
+export const quotationStatus=pgEnum('quotation_status',['draft','sent','accepted','rejected','expired']);
+export const contractStatus=pgEnum('contract_status',['draft','signed','terminated']);
+export const quotations=pgTable('quotations',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
+ eventId:uuid('event_id').notNull().references(()=>events.id),
+ clientId:uuid('client_id').notNull().references(()=>clients.id),
+ number:varchar('number',{length:72}).notNull(),
+ title:varchar('title',{length:200}).notNull(),
+ amount:numeric('amount',{precision:18,scale:2}).notNull(),
+ notes:text('notes'),
+ status:quotationStatus('status').notNull().default('draft'),
+ validUntil:date('valid_until'),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+ updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow()
+},t=>[uniqueIndex('quotation_org_number_idx').on(t.organizationId,t.number),index('quotation_event_idx').on(t.eventId)]);
+export const contracts=pgTable('contracts',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
+ eventId:uuid('event_id').notNull().references(()=>events.id),
+ quotationId:uuid('quotation_id').notNull().references(()=>quotations.id),
+ number:varchar('number',{length:72}).notNull(),
+ amount:numeric('amount',{precision:18,scale:2}).notNull(),
+ status:contractStatus('status').notNull().default('draft'),
+ signedAt:timestamp('signed_at',{withTimezone:true}),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
+},t=>[uniqueIndex('contract_org_number_idx').on(t.organizationId,t.number),uniqueIndex('contract_quotation_idx').on(t.quotationId),index('contract_event_idx').on(t.eventId)]);
