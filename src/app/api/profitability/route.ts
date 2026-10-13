@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
-import {and,eq,ne} from 'drizzle-orm';
+import {and,eq,ne,inArray} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
 import {events,eventCosts,invoices,payments,purchaseOrders} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
@@ -21,7 +21,7 @@ export async function GET(request:NextRequest){
    db.select({amount:purchaseOrders.amount,status:purchaseOrders.status}).from(purchaseOrders).where(and(eq(purchaseOrders.eventId,eventId),eq(purchaseOrders.organizationId,org),ne(purchaseOrders.status,'cancelled')))
   ]);
   const invoiceIds=invoiceRows.filter(x=>x.status!=='voided').map(x=>x.id);
-  const paymentRows=invoiceIds.length?await db.select({amount:payments.amount,invoiceId:payments.invoiceId}).from(payments).where(eq(payments.organizationId,org)):[]; 
+  const paymentRows=invoiceIds.length?await db.select({amount:payments.amount,invoiceId:payments.invoiceId}).from(payments).where(and(eq(payments.organizationId,org),inArray(payments.invoiceId,invoiceIds))):[]; 
   const invoiceSet=new Set(invoiceIds);
   const summary=profitability({
    contractValue:event.contractValue,approvedBudget:event.approvedBudget,
