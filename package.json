@@ -18,7 +18,8 @@
     "react-dom": "19.2.4",
     "lucide-react": "^0.468.0",
     "drizzle-orm": "^0.44.6",
-    "@neondatabase/serverless": "^1.0.2"
+    "@neondatabase/serverless": "^1.0.2",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
