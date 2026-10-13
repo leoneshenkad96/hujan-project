@@ -1,4 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
+import { isTrustedOrigin } from '@/lib/security';
 import {and,eq} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
 import {purchaseOrders} from '@/db/schema';
@@ -8,7 +9,7 @@ export const runtime='nodejs';export const dynamic='force-dynamic';
 const fail=(error:string,status:number)=>NextResponse.json({error},{status,headers:{'Cache-Control':'no-store'}});
 type Context={params:Promise<{id:string}>};
 export async function PATCH(req:NextRequest,{params}:Context){
- const origin=req.headers.get('origin');if(origin&&origin!==req.nextUrl.origin)return fail('Origin not allowed',403);
+ if(!isTrustedOrigin(req.headers.get('origin'),req.url,process.env.NODE_ENV==='production'))return fail('Origin not allowed',403);
  try{const a=await requirePermission('vendors:write');if(a.error)return fail(a.error,a.error==='unauthorized'?401:403);
  const {id}=await params;if(!uuid.test(id))return fail('Invalid ID',400);
  if(!(req.headers.get('content-type')||'').includes('application/json'))return fail('Expected JSON',415);
