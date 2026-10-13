@@ -44,3 +44,18 @@ These must run against a real authenticated dev runtime with disposable fixtures
 
 ### Release approval
 A green GitHub integration check means code compiles and static tests pass. It is **not** proof of end-to-end behavior or authority to merge or deploy. Require explicit separate approvals for merging stacked PRs, Neon production migrations and Vercel deployment.
+
+## Isolated Neon UAT branch — prepared
+- Neon project: `fancy-cell-64250119` (Vinca only).
+- Parent: development `br-muddy-leaf-b34gxxf2`.
+- Disposable UAT branch: `br-long-wildflower-b3nsciay` (`uat-isolated-2026-10-13`).
+- Read-only verification on isolated branch: **7 migrations, 0 organizations, 0 users, 0 payments**.
+- No UAT accounts, invoices, vendor payments, or customer records created. **Do not mistake an empty UAT branch for a successful live UAT.**
+
+## Live smoke runner
+`node scripts/uat-http-smoke.mjs` requires `UAT_BASE_URL` and distinct `UAT_ORG_A/UAT_EMAIL_A/UAT_PASSWORD_A` and `UAT_ORG_B/UAT_EMAIL_B/UAT_PASSWORD_B` supplied securely at runtime, not committed to GitHub. It checks anonymous invoice denial, isolated login, event read, optional IDOR across tenant events, invalid-origin logout, and finance access.
+
+- The script refuses hosts that do not indicate UAT/preview/localhost and rejects Kasapink.
+- Never connect a UAT website to the Vinca production Neon branch.
+- UAT URL, user credentials and server runtime have not been provisioned.
+- This smoke script makes no application mutations other than login sessions, and therefore **does not verify money writes or concurrency**. Those require isolated test fixture accounts, a separate transaction test plan and observed database ledger invariants.
