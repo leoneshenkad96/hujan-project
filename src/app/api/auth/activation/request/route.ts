@@ -14,7 +14,7 @@ export async function POST(req:NextRequest){
  // Only disposable UAT deployments may issue first-owner activation challenges.
  if(process.env.UAT_ACTIVATION_ENABLED!=='true'||!process.env.RESEND_API_KEY||!process.env.ACTIVATION_FROM_EMAIL||!process.env.UAT_ACTIVATION_BASE_URL)return NextResponse.json({error:'Activation is not configured'},{status:503});
  const origin=new URL(process.env.UAT_ACTIVATION_BASE_URL).origin;
- if(origin!==req.nextUrl.origin||!origin.startsWith('https://')||!/uat|preview/i.test(origin))return NextResponse.json({error:'UAT origin configuration mismatch'},{status:503});
+ if(origin!==req.nextUrl.origin||!origin.startsWith('https://')||!new URL(origin).hostname.endsWith('.vercel.app'))return NextResponse.json({error:'UAT origin configuration mismatch'},{status:503});
  try{
  const ip=req.headers.get('x-real-ip')||'unknown';
  if(!await enforceLoginRateLimit(ip,'activation:'+data.organization,data.email))return NextResponse.json({error:'Too many attempts'},{status:429});
