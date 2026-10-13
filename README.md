@@ -54,25 +54,17 @@ npm audit --omit=dev --audit-level=high
 
 Buat `.env.local` sendiri (jangan di-commit). Minimal `DATABASE_URL` harus menunjuk branch database Vinca **development / UAT yang benar**, dengan koneksi TLS. Migrasi hanya dijalankan pada branch database yang telah mendapat persetujuan untuk diubah; jangan otomatis menjalankan `db:migrate` ke production.
 
-## Login dan aktivasi Owner UAT
+## Login Owner UAT (tanpa Resend)
 
-Tidak ada akun demo atau password default. Akun Owner UAT saat ini:
+Login mengikuti pola ERP Kasapink: **email + password**, bukan tautan email/OTP/Resend. Halaman `/login` mengirim kredensial ke `POST /api/auth/login`; autentikasi menggunakan password `scrypt`, sesi cookie `HttpOnly`, rate limiting, dan RBAC. Endpoint permintaan aktivasi email sudah dinonaktifkan (HTTP 410), sedangkan `/activate` mengarah ke `/login`.
 
-- **Organization slug:** `vinca-uat`
-- **Email:** `leoneshenkad@gmail.com`
-- **Status:** **nonaktif dan belum memiliki password**, sehingga belum bisa login.
+- **Organisasi UAT:** `vinca-uat`
+- **Email Owner:** `leoneshenkad@gmail.com`
+- **Status saat pemeriksaan 14 Oktober 2026:** belum aktif dan belum memiliki password; belum bisa login.
 
-Di branch integrasi sudah tersedia halaman `/activate` dan dua API `/api/auth/activation/request` dan `/api/auth/activation/complete`. Link aktivasi sekali pakai berlaku 15 menit; token hanya disimpan sebagai hash. Agar alur ini dapat digunakan, **Preview terbaru** harus berjalan dan variabel berikut harus terpasang **khusus Preview branch UAT**:
+**Provisioning Owner** harus dilakukan satu kali melalui jalur administrator privat terhadap database **Neon UAT** saja. Password dipilih dan dimasukkan sendiri melalui input tersembunyi, tidak ditulis di chat, GitHub, PR, log, maupun query SQL publik. Gunakan `scripts/hash-password.mjs` untuk menghasilkan hash `scrypt` yang kompatibel, lalu simpan hanya hash-nya dan aktifkan user yang benar sesudah memastikan target branch UAT. Verifikasi email unik, role `owner`, dan login sesudah provisioning. Jangan membuat password default atau mengaktifkan Owner tanpa password.
 
-| Environment variable | Fungsi |
-|---|---|
-| `DATABASE_URL` | Koneksi ke Neon branch UAT Vinca, bukan production |
-| `UAT_ACTIVATION_ENABLED` | `true` hanya untuk UAT |
-| `UAT_ACTIVATION_BASE_URL` | HTTPS origin persis dari Preview yang digunakan |
-| `RESEND_API_KEY` | Kunci Resend dengan izin email sending, simpan sebagai secret |
-| `ACTIVATION_FROM_EMAIL` | Alamat pengirim yang diizinkan oleh akun Resend |
-
-Pengirim trial Resend mungkin memiliki batasan penerima. **Jangan menganggap email sudah dikirim** sebelum pengiriman dan aktivasi diverifikasi. Aktivasi memakai Safari/iPhone setelah Preview dan pengirim email berfungsi. Jangan pernah membagikan password lewat chat, menaruh token aktivasi pada issue/README, atau meng-commit kredensial.
+Preview perlu terhubung ke branch UAT yang sesuai dan memakai build terbaru. Konfigurasi `RESEND_API_KEY`, `ACTIVATION_FROM_EMAIL`, `UAT_ACTIVATION_ENABLED`, dan `UAT_ACTIVATION_BASE_URL` **tidak diperlukan untuk login email/password**; bersihkan konfigurasi lama secara terkontrol setelah memeriksa tidak ada fitur lain yang menggunakannya. Tidak perlu merge/deploy production untuk uji login Preview.
 
 ## UAT dan kualitas
 
@@ -83,7 +75,7 @@ Pengirim trial Resend mungkin memiliki batasan penerima. **Jangan menganggap ema
 - `scripts/uat-finance-concurrency.mjs`: pengujian tulis transaksi paralel dan idempotency key. **Berpotensi membuat pembayaran**; wajib memakai invoice fixture disposable, dua organisasi, dan `UAT_FINANCE_WRITE_ACK=DISPOSABLE_UAT_ONLY`. Runner ini **tidak berjalan otomatis di CI**.
 - `GET /api/finance/reconciliation`: laporan anomali pembayaran **read-only** (hak akses `finance:read`).
 
-CI menjalankan tes statis/unit, build dan audit dependensi. **Belum lulus UAT langsung** untuk dua organisasi, pembayaran paralel, browser iPhone/tablet/desktop, dan pemulihan backup. Neon UAT memiliki 9 migrasi (0000–0008), sementara status database development/production harus diverifikasi terpisah sebelum release.
+CI menjalankan tes statis/unit, build dan audit dependensi. **Belum lulus UAT langsung** untuk dua organisasi, pembayaran paralel, browser iPhone/tablet/desktop, dan pemulihan backup. Pada pemeriksaan 14 Oktober 2026, Neon UAT telah mencatat 18 migrasi (0000–0017). Status development/production harus diverifikasi secara terpisah sebelum release.
 
 ## Git dan deployment
 
@@ -96,6 +88,6 @@ Pekerjaan terdiri dari **stacked PR #01 → #16**, diikuti **PR #17** (`integrat
 
 ## Persyaratan sebelum production GO
 
-Akun Owner aktif melalui email terverifikasi; dua organisasi dengan role berbeda sudah diuji (akses 401/403/404 dan IDOR); pembayaran paralel/idempotency, pembukuan dan audit direkonsiliasi; UI responsif dan aksesibilitas diuji; backup/restore diuji pada branch disposable; keamanan proxy, header dan dependensi ditinjau; lalu mendapat persetujuan owner untuk merge, migrasi, dan deploy.
+Akun Owner diprovisioning dengan password pribadi secara aman dan login berhasil; dua organisasi dengan role berbeda sudah diuji (akses 401/403/404 dan IDOR); pembayaran paralel/idempotency, pembukuan dan audit direkonsiliasi; UI responsif dan aksesibilitas diuji; backup/restore diuji pada branch disposable; keamanan proxy, header dan dependensi ditinjau; lalu mendapat persetujuan owner untuk merge, migrasi, dan deploy.
 
 **Disusun dan dikembangkan untuk Vinca Event Organizer ERP.**
