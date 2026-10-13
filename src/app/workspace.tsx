@@ -9,6 +9,7 @@ import EventProjects from './event-projects';
 import TaskBoard from './task-board';
 import Procurement from './procurement';
 import BudgetWorkspace from './budget-workspace';
+import RundownWorkspace from './rundown-workspace';
 
 type EventStatus = 'Planning'|'Confirmed'|'Pre-Production'|'Live'|'Completed';
 type Evt = {id:number;code:string;name:string;client:string;type:string;date:string;venue:string;pm:string;status:EventStatus;progress:number;value:number;budget:number};
@@ -66,7 +67,7 @@ export default function Workspace({role}:{role:string}){
   if(page==='tasks')return <TaskBoard canWrite={can(role,'tasks:write')} />;
   if(page==='budget')return <BudgetWorkspace canWrite={can(role,'finance:write')} />;
   if(page==='vendors')return <Procurement canWrite={can(role,'vendors:write')} />;
-  if(page==='rundown')return <><div className="eo-title-row"><div><h1>Rundown & Show Management</h1><p>Simulasi cue dan rundown acara.</p></div></div><Card title="Annual Corporate Gathering · Run of Show"><Table heads={['START','SEGMENT','PIC','STATUS']}>{segments.map((v,i)=><tr key={v[0]}><td>{v[0]}</td><td>{v[1]}</td><td>{v[2]}</td><td><button className="eo-secondary" onClick={()=>setRunState(old=>old.map((x,j)=>i===j?x==='Planned'?'Standby':x==='Standby'?'On Air':x==='On Air'?'Done':'Planned':x))}>{runState[i]} ↻</button></td></tr>)}</Table></Card></>;
+  if(page==='rundown')return <RundownWorkspace canWrite={can(role,'rundown:write')} />;
   if(page==='finance')return <><div className="eo-title-row"><div><h1>Finance & Invoices</h1><p>Pembayaran parsial dan outstanding — demo saja.</p></div><button className="eo-primary" onClick={()=>setModal('invoice')} disabled={!can(role,'finance:write')}><Plus size={16}/> New Invoice</button></div><Card title="Client Invoices"><Table heads={['EVENT','INVOICED','PAID','OUTSTANDING','ACTION']}>{invoices.map(i=><tr key={i.id}><td>{events.find(e=>e.id===i.eventId)?.name}</td><td>{money(i.amount)}</td><td>{money(i.paid)}</td><td>{money(i.amount-i.paid)}</td><td><button className="eo-secondary" disabled={i.paid>=i.amount||!can(role,'finance:write')} onClick={()=>{const remaining=i.amount-i.paid;const raw=window.prompt('Catat pembayaran demo (Rp), maksimum '+money(remaining));if(raw===null)return;const n=Number(raw);if(!Number.isFinite(n)||n<=0||n>remaining){setNotice('Nominal tidak valid / melebihi outstanding');return}setInvoices(old=>old.map(x=>x.id===i.id?{...x,paid:x.paid+n}:x));setNotice('Pembayaran simulasi tercatat.')}}>+ Payment</button></td></tr>)}</Table></Card></>;
   return <><div className="eo-title-row"><div><h1>Users & Settings</h1><p>Role-based access akan dibuat di PR #04.</p></div></div><Card title="Planned Roles"><div className="eo-grid3">{['Owner','Project Manager','Sales','Finance','Production','Crew'].map(x=><div className="eo-detail" key={x}><strong>{x}</strong><small>Configuration coming soon</small></div>)}</div></Card></>;
  }
