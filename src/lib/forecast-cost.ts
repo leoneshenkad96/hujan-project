@@ -1,4 +1,4 @@
-import {minorUnits,formatMinor} from './budget-validation';
+import {minorUnits,formatMinor} from './budget-validation.ts';
 
 /** Financial LOCK: a PO amount is NOT a remaining commitment until its fulfilled
  * share is explicitly matched to actual expense records. Never infer matches
