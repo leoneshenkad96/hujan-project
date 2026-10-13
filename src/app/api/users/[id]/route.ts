@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { and,eq } from 'drizzle-orm';
+import { and,eq,sql } from 'drizzle-orm';
 import { getDatabase } from '@/db/client';
-import { users,authSessions } from '@/db/schema';
+import { users } from '@/db/schema';
 import { requirePermission } from '@/lib/auth';
 import { hashPassword } from '@/lib/password';
 import { ROLES } from '@/lib/permissions';
@@ -29,8 +29,34 @@ export async function PATCH(req:NextRequest,{params}:Context){
  if(!target)return fail('User not found',404);
  if((target.role==='owner'||update.role==='owner')&&auth.user.role!=='owner')return fail('Only owner may manage owner accounts',403);
  if(id===auth.user.id&&(update.active===false||(update.role!==undefined&&update.role!==auth.user.role)))return fail('Cannot revoke your own account or role',409);
- const [changed]=await db.update(users).set(update).where(and(eq(users.id,id),eq(users.organizationId,auth.user.organizationId))).returning({id:users.id,name:users.name,email:users.email,role:users.role,active:users.active});
- if(x.password!==undefined||x.active===false||x.role!==undefined){await db.update(authSessions).set({revokedAt:new Date()}).where(and(eq(authSessions.userId,id),eq(authSessions.organizationId,auth.user.organizationId)));}
+ // A single PostgreSQL statement makes user changes and session revocation atomic.
+ // Recheck the owner's privilege against the current row to close a concurrent role-edit race.
+ const changedName=update.name??null;
+ const changedRole=update.role??null;
+ const changedActive=update.active??null;
+ const changedPassword=update.passwordHash??null;
+ const mustRevoke=x.password!==undefined||x.active===false||x.role!==undefined;
+ const result=await db.execute(sql`
+ WITH changed AS (
+  UPDATE users SET
+   name=COALESCE(${changedName}::varchar,name),
+   role=COALESCE(${changedRole}::varchar,role),
+   active=COALESCE(${changedActive}::boolean,active),
+   password_hash=COALESCE(${changedPassword}::text,password_hash)
+  WHERE id=${id}::uuid AND organization_id=${auth.user.organizationId}::uuid
+   AND (${auth.user.role==='owner'}::boolean OR role<>'owner')
+  RETURNING id,name,email,role,active
+ ), revoked AS (
+  UPDATE auth_sessions SET revoked_at=NOW()
+  WHERE user_id=${id}::uuid AND organization_id=${auth.user.organizationId}::uuid
+   AND ${mustRevoke}::boolean AND id IN (SELECT id FROM auth_sessions WHERE user_id=${id}::uuid)
+   AND EXISTS(SELECT 1 FROM changed)
+  RETURNING id
+ )
+ SELECT c.id,c.name,c.email,c.role,c.active,(SELECT count(*) FROM revoked)::int AS revoked_count FROM changed c
+ `);
+ const changed=result.rows[0];
+ if(!changed)return fail('User not found or no longer editable',409);
  return NextResponse.json({user:changed},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Cannot update user',503)}
 }
