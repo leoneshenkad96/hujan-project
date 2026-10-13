@@ -231,3 +231,14 @@ export const leadFollowUps=pgTable('lead_follow_ups',{
  nextContactAt:timestamp('next_contact_at',{withTimezone:true}),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
 },t=>[index('lead_follow_ups_lead_created_idx').on(t.leadId,t.createdAt),index('lead_follow_ups_org_idx').on(t.organizationId)]);
+
+export const crewAssignments=pgTable('crew_assignments',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
+ eventId:uuid('event_id').notNull().references(()=>events.id),
+ userId:uuid('user_id').notNull().references(()=>users.id),
+ role:varchar('role',{length:100}).notNull(),
+ startAt:timestamp('start_at',{withTimezone:true}).notNull(),
+ endAt:timestamp('end_at',{withTimezone:true}).notNull(),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
+},t=>[index('crew_assignments_user_time_idx').on(t.organizationId,t.userId,t.startAt),index('crew_assignments_event_idx').on(t.organizationId,t.eventId),check('crew_assignments_time_valid',sql`${t.startAt} < ${t.endAt}`)]);
