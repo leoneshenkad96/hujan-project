@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from 'next/server';
-import {and,desc,eq,ilike,or,sql} from 'drizzle-orm';
+import {and,desc,eq,ilike,or} from 'drizzle-orm';
+import {randomUUID} from 'node:crypto';
 import {getDatabase} from '@/db/client';
 import {events,clients,users} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
@@ -35,9 +36,8 @@ export async function POST(req:NextRequest){
   const [manager]=await db.select({id:users.id,role:users.role}).from(users).where(and(eq(users.id,payload.projectManagerId),eq(users.organizationId,organizationId),eq(users.active,true))).limit(1);
   if(!manager||!['owner','admin','project_manager'].includes(manager.role))return fail('Invalid project manager',400);
  }
- // Generate a unique per-organization event code via database sequence; stable under concurrent requests.
- const [{n}]=await db.execute(sql`select nextval('event_code_seq') as n`);
- const code='EVT-'+new Date().getUTCFullYear()+'-'+String(n).padStart(6,'0');
+ // A UUID-derived code avoids non-atomic MAX+1 races and new sequence migrations.
+ const code='EVT-'+randomUUID();
  const [event]=await db.insert(events).values({...payload,organizationId,code}).returning();
  return NextResponse.json({event},{status:201,headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Event service unavailable',503)}
