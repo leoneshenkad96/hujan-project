@@ -11,8 +11,8 @@ if(process.env.VINCA_BOOTSTRAP_ACK!=='ISOLATED_UAT_ONLY'||branch!=='br-long-wild
  stderr.write('Refusing bootstrap: explicit isolated UAT acknowledgement, branch and DATABASE_URL are required.\n');process.exit(1);
 }
 if(!stdin.isTTY||!stdin.setRawMode){stderr.write('Bootstrap requires a private interactive terminal.\n');process.exit(1)}
-async function readSecret(){
- emitKeypressEvents(stdin);stdin.setRawMode(true);stdout.write('New Owner password (hidden, 12-256 chars): ');
+async function readSecret(prompt='New Owner password (hidden, 12-256 chars): '){
+ emitKeypressEvents(stdin);stdin.setRawMode(true);stdout.write(prompt);
  try{return await new Promise((resolve,reject)=>{
   let secret='';
   function onKey(str,key){
@@ -27,7 +27,7 @@ async function readSecret(){
 try{
  const password=await readSecret();
  if(password.length<12||password.length>256)throw Error('Password length invalid');
- const confirmation=await readSecret();
+ const confirmation=await readSecret('Confirm Owner password (hidden): ');
  if(password!==confirmation)throw Error('Password confirmation does not match');
  const salt=randomBytes(16);
  const hash='scrypt$'+salt.toString('hex')+'$'+scryptSync(password,salt,64,{N:16384,r:8,p:1,maxmem:32*1024*1024}).toString('hex');
