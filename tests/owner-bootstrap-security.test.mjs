@@ -13,4 +13,6 @@ test('Owner password is entered hidden and not printed in logs or CLI arguments'
  assert.match(script,/emitKeypressEvents/);
  assert.match(script,/setRawMode\(false\)/);
  assert.match(script,/active=false AND password_hash IS NULL/);
+ assert.match(script,/Confirm Owner password/);
+ assert.match(script,/password!==confirmation/);
 });
