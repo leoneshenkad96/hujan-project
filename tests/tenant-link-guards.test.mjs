@@ -20,10 +20,10 @@ test('invoice payment and PO tenant guards require corresponding parent organiza
 });
 test('tenant migration is tracked but never automatically deployed from CI',()=>{
  const entries=JSON.parse(readFileSync('drizzle/meta/_journal.json','utf8')).entries;
- assert.equal(entries.at(-2)?.tag,'0013_tenant_link_guards');
- assert.equal(entries.at(-1)?.tag,'0014_tenant_guard_completion');
- assert.equal(entries.at(-2)?.idx,13);
- assert.equal(entries.at(-1)?.idx,14);
+ assert.equal(entries.at(-3)?.tag,'0013_tenant_link_guards');
+ assert.equal(entries.at(-2)?.tag,'0014_tenant_guard_completion');
+ assert.equal(entries.at(-3)?.idx,13);
+ assert.equal(entries.at(-2)?.idx,14);
  const workflow=readFileSync('.github/workflows/final-integration.yml','utf8');
  assert.doesNotMatch(workflow,/\bnpm run db:migrate\b|vercel deploy/);
 });
