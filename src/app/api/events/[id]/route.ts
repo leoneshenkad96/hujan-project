@@ -1,8 +1,8 @@
 import {NextRequest,NextResponse} from 'next/server';
 import { isTrustedOrigin } from '@/lib/security';
-import {and,eq} from 'drizzle-orm';
+import {and,eq,notExists,notInArray} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
-import {events} from '@/db/schema';
+import {events,tasks,rundownItems} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
 import {parseEventStatus,parseProgress,canTransitionEvent} from '@/lib/event-validation';
 export const runtime='nodejs';export const dynamic='force-dynamic';
@@ -14,7 +14,7 @@ export async function GET(_req:NextRequest,{params}:Context){
  const auth=await requirePermission('events:read');if(auth.error)return fail(auth.error,auth.error==='unauthorized'?401:403);
  const {id}=await params;if(!uuid.test(id))return fail('Invalid ID',400);
  const [event]=await getDatabase().select().from(events).where(and(eq(events.id,id),eq(events.organizationId,auth.user.organizationId))).limit(1);
- if(!event)return fail('Concurrent event update conflict',409);
+ if(!event)return fail('Event not found',404);
  return NextResponse.json({event},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Event service unavailable',503)}
 }
@@ -37,8 +37,8 @@ export async function PATCH(req:NextRequest,{params}:Context){
  if(existing.status==='completed'||existing.status==='cancelled')return fail('Closed event cannot be modified',409);
  if(status==='completed'&&progress!==undefined&&progress!==100)return fail('Completed event must have 100% progress',400);
  const update={...(status!==undefined?{status}:{}),...(progress!==undefined?{progress}:{}),...(status==='completed'?{progress:100}:{}),updatedAt:new Date()};
- const [event]=await db.update(events).set(update).where(and(eq(events.id,id),eq(events.organizationId,org),eq(events.status,existing.status))).returning();
- if(!event)return fail('Event not found',404);
+ const [event]=await db.update(events).set(update).where(and(eq(events.id,id),eq(events.organizationId,org),eq(events.status,existing.status),status==='completed'?notExists(db.select({id:tasks.id}).from(tasks).where(and(eq(tasks.organizationId,org),eq(tasks.eventId,id),notInArray(tasks.status,['done'])))):undefined,status==='completed'?notExists(db.select({id:rundownItems.id}).from(rundownItems).where(and(eq(rundownItems.organizationId,org),eq(rundownItems.eventId,id),notInArray(rundownItems.status,['done','skipped'])))):undefined)).returning();
+ if(!event)return fail('Event update conflict or incomplete tasks/rundown',409);
  return NextResponse.json({event},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Event service unavailable',503)}
 }
