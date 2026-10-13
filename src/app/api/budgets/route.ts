@@ -16,7 +16,7 @@ export async function GET(req:NextRequest){
  if(!event)return fail('Event not found',404);
  const [costs,orders]=await Promise.all([
  db.select({id:eventCosts.id,description:eventCosts.description,amount:eventCosts.amount,status:eventCosts.status,purchaseOrderId:eventCosts.purchaseOrderId}).from(eventCosts).where(and(eq(eventCosts.eventId,eventId),eq(eventCosts.organizationId,org))),
- db.select({id:purchaseOrders.id,number:purchaseOrders.number,description:purchaseOrders.description,amount:purchaseOrders.amount,status:purchaseOrders.status}).from(purchaseOrders).where(and(eq(purchaseOrders.eventId,eventId),eq(purchaseOrders.organizationId,org),ne(purchaseOrders.status,'cancelled')))
+ db.select({id:purchaseOrders.id,number:purchaseOrders.number,description:purchaseOrders.description,amount:purchaseOrders.amount,matchedActual:purchaseOrders.matchedActual,status:purchaseOrders.status}).from(purchaseOrders).where(and(eq(purchaseOrders.eventId,eventId),eq(purchaseOrders.organizationId,org),ne(purchaseOrders.status,'cancelled')))
  ]);
  const actual=costs.filter(c=>c.status==='actual');
  const eligible=orders.filter(o=>o.status!=='draft');
@@ -28,11 +28,8 @@ export async function GET(req:NextRequest){
   for(const cost of actual){if(cost.purchaseOrderId){const parts=linked.get(cost.purchaseOrderId)||[];parts.push(cost.amount);linked.set(cost.purchaseOrderId,parts)}}
   const allMatched=eligible.length>0&&actual.every(c=>c.purchaseOrderId!==null)&&[...linked.keys()].every(id=>eligible.some(o=>o.id===id));
   if(allMatched){
-   const commitments=eligible.map(o=>({poAmount:o.amount,matchedActual:(linked.get(o.id)||[]).reduce((sum,v)=>{
-    const [a,b='']=v.split('.');return sum+BigInt(a)*100n+BigInt((b+'00').slice(0,2));
-   },0n).toString()}));
-   // matchedActual requires money units, not raw integer cents.
-   forecast=forecastCost({approvedBudget:event.approvedBudget,actualExpenses:actual.map(c=>c.amount),commitments:commitments.map(x=>({...x,matchedActual:(BigInt(x.matchedActual)/100n).toString()+'.'+(BigInt(x.matchedActual)%100n).toString().padStart(2,'0')})),otherForecastRemaining:[]});
+   const commitments=eligible.map(o=>({poAmount:o.amount,matchedActual:o.matchedActual}));
+   forecast=forecastCost({approvedBudget:event.approvedBudget,actualExpenses:actual.map(c=>c.amount),commitments,otherForecastRemaining:[]});
    forecastStatus='partial_estimate';
   }
  }catch{forecast=null;forecastStatus='inconsistent_reconciliation'}
