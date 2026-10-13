@@ -8,7 +8,7 @@ test('every integrated ERP module has a committed API route',()=>{
 test('all ten canonical schema migrations are present and ordered',()=>{
  const entries=JSON.parse(readFileSync('drizzle/meta/_journal.json','utf8')).entries;
  assert.equal(entries.length,10);
- assert.deepEqual(entries.map(x=>Number(x.tag.substring(0,4))),[0,1,2,3,4,5,6,7,8]);
+ assert.deepEqual(entries.map(x=>Number(x.tag.substring(0,4))),[0,1,2,3,4,5,6,7,8,9]);
 });
 test('release CI has neither production deployment nor database write action',()=>{
  const content=readFileSync('.github/workflows/release-readiness.yml','utf8');
