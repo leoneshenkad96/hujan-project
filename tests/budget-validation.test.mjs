@@ -12,3 +12,5 @@ test('financial LOCK: decimals are exact and remaining budget is not called vari
  assert.equal(r.actualSpent,'75.10');assert.equal(r.remainingAfterActual,'25.00');
  assert.equal(r.openCommitments,'20.15');assert.equal(r.remainingAfterCommitmentsOnly,'79.95');
 });
+
+test('financial LOCK: budget variance is actual minus approved',()=>{const s=summarizeBudget('100.00',['130.00'],['50.00']);assert.equal(s.budgetVarianceActualMinusApproved,'30.00');assert.equal(s.remainingAfterActual,'-30.00')});
