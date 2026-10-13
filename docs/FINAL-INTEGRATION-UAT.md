@@ -115,3 +115,18 @@ This section is the current release gate; earlier historical checkpoints above a
 - [ ] Verify exact Neon branch target and proceed with multi-tenant and finance HTTP tests on disposable fixtures only.
 
 No production configuration or database was changed by these diagnostics.
+
+
+## P0 login simplification implementation checkpoint (2026-10-13)
+
+- [x] Login screen now asks only for email and password, without organization slug.
+- [x] Server continues validating same-origin requests, password hashes, per-IP/account rate limits, active status and revocable HttpOnly session cookies.
+- [x] Email-only identity selection rejects email collisions across all tenants (fail-closed; generic 401). **Before onboarding multiple organizations, ensure unique email ownership or introduce an explicit secure account chooser.**
+- [x] Legacy /activate page redirects to /login; obsolete Resend activation request/complete APIs return 410 with Origin validation retained.
+- [ ] Admin-provisioned first Owner needs a securely generated password hash and explicit UAT-only update through an authorized secure channel. The existing Owner remains inactive/passwordless.
+- [ ] Add/verify administrator-controlled account creation, reset password, role editing, invitation/change-password-on-first-login before general user onboarding.
+- [ ] CI and runtime regression validation of the **new** login build, incorrect password, inactive account, cross-tenant duplicate email, rate limits, logout, session expiry.
+- [ ] Check that Vercel Preview environment points to isolated Neon UAT (do not print the connection string) and redeploy latest integration commit for browser testing.
+- [ ] Complete multi-tenant, finance and backup UAT before production.
+
+This checkpoint replaces the old email-activation workflow: **Resend is not required to log in.** No default password, public registration endpoint, plaintext credential, database write, PR merge or production deployment was made by the login changes.
