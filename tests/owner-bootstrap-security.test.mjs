@@ -7,6 +7,9 @@ test('Owner bootstrap requires explicit isolated UAT selection and cannot run wi
  assert.match(script,/br-long-wildflower-b3nsciay/);
  assert.match(script,/stdin\.isTTY/);
  assert.match(script,/setRawMode\(true\)/);
+ assert.match(script,/current_setting\('neon\.branch_id',true\)/);
+ assert.match(script,/current_setting\('neon\.project_id',true\)/);
+ assert.match(script,/Connection is not the expected isolated Vinca UAT database/);
 });
 test('Owner password is entered hidden and not printed in logs or CLI arguments',()=>{
  assert.doesNotMatch(script,/rl\.question/);
