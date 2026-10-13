@@ -7,6 +7,7 @@ test('Event Closing UI verifies task and rundown before enabling completion',()=
  assert.match(code,/\/api\/rundown\?eventId=/);
  assert.match(code,/for\(let page=1;page<=10000;page\+\+\)/);
  assert.match(code,/if\(!data\.hasMore\)return all/);
+ assert.match(code,/if\(cueData\.hasMore\)throw new Error/);
  assert.match(code,/pendingTasks\.length===0&&pendingCues\.length===0/);
  assert.match(code,/status==='live'/);
  assert.match(code,/window\.confirm/);
