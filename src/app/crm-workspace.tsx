@@ -22,6 +22,8 @@ export default function CrmWorkspace({canWrite}:{canWrite:boolean}){
  const [error,setError]=useState('');
  const [notice,setNotice]=useState('');
  const [modal,setModal]=useState(false);
+ const [formDirty,setFormDirty]=useState(false);
+ const closeModal=()=>{if(formDirty&&!window.confirm('Perubahan form belum disimpan. Tutup tanpa menyimpan?'))return;setModal(false);setFormDirty(false)};
  const load=useCallback(async()=>{
   setBusy(true);setError('');
   const url=new URL('/api/crm/'+tab,window.location.origin);
@@ -51,7 +53,7 @@ export default function CrmWorkspace({canWrite}:{canWrite:boolean}){
   try{
    const r=await fetch(tab==='leads'?'/api/leads':'/api/crm/clients',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
    if(!r.ok){const problem=await r.json().catch(()=>({error:'Tidak dapat menyimpan.'}));throw new Error(problem.error||'Gagal menyimpan.')}
-   setModal(false);setSelectedLead(null);setNotice(tab==='clients'?'Klien tersimpan.':'Lead tersimpan.');setPage(1);await load();
+   setModal(false);setFormDirty(false);setSelectedLead(null);setNotice(tab==='clients'?'Klien tersimpan.':'Lead tersimpan.');setPage(1);await load();
   }catch(e){setError(e instanceof Error?e.message:'Gagal menyimpan.')}
   finally{setSaving(false)}
  }
@@ -75,7 +77,7 @@ export default function CrmWorkspace({canWrite}:{canWrite:boolean}){
    <div className="eo-pagination"><span>Page {page}</span><button aria-label="Previous page" disabled={page===1||busy} onClick={()=>setPage(p=>p-1)}><ChevronLeft size={16}/></button><button aria-label="Next page" disabled={!hasMore||busy} onClick={()=>setPage(p=>p+1)}><ChevronRight size={16}/></button></div>
   </div>
   {tab==='leads'&&selectedLead&&<LeadDetail key={selectedLead.id+selectedLead.status} lead={selectedLead} canWrite={canWrite} onClose={()=>setSelectedLead(null)} onChange={()=>{setSelectedLead(null);void load()}}/>}
-  {modal&&<div className="eo-modalback" onClick={e=>{if(e.target===e.currentTarget)setModal(false)}}><form onSubmit={save} className="eo-modal"><header><h2>{tab==='clients'?'Add Client':'Add Sales Lead'}</h2><button type="button" aria-label="Close" onClick={()=>setModal(false)}>×</button></header>
+  {modal&&<div className="eo-modalback" onClick={e=>{if(e.target===e.currentTarget)closeModal()}}><form onSubmit={save} onChange={()=>setFormDirty(true)} className="eo-modal"><header><h2>{tab==='clients'?'Add Client':'Add Sales Lead'}</h2><button type="button" aria-label="Close" onClick={closeModal}>×</button></header>
    <div className="eo-form">{tab==='clients'?<><label>Client name<input required name="name" maxLength={180}/></label><label>Email<input name="email" type="email" maxLength={254}/></label><label>Phone<input name="phone" maxLength={40}/></label></>:<><label>Opportunity<input required name="title" maxLength={180}/></label><label>Estimated value (Rp)<input name="estimatedValue" type="number" min="0" step="0.01" required defaultValue="0"/></label><label>Klien terkait (opsional)<select name="clientId"><option value="">Tanpa klien</option>{clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label></>}</div>
    <footer><button type="button" className="eo-secondary" onClick={()=>setModal(false)}>Cancel</button><button className="eo-primary" type="submit" disabled={saving}>{saving?'Saving...':'Save'}</button></footer>
   </form></div>}
