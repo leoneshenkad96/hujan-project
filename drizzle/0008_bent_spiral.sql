@@ -1,0 +1,2 @@
+ALTER TABLE "invoice_payments" ADD COLUMN "idempotency_key" varchar(80);--> statement-breakpoint
+CREATE UNIQUE INDEX "invoice_payments_idempotency_idx" ON "invoice_payments" USING btree ("organization_id","invoice_id","idempotency_key");
