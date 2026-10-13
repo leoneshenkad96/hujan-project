@@ -1,4 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
+import { isTrustedOrigin } from '@/lib/security';
 import {and,eq} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
 import {events} from '@/db/schema';
@@ -18,7 +19,7 @@ export async function GET(_req:NextRequest,{params}:Context){
  }catch{return fail('Event service unavailable',503)}
 }
 export async function PATCH(req:NextRequest,{params}:Context){
- const origin=req.headers.get('origin');if(origin&&origin!==req.nextUrl.origin)return fail('Origin not allowed',403);
+ if(!isTrustedOrigin(req.headers.get('origin'),req.url,process.env.NODE_ENV==='production'))return fail('Origin not allowed',403);
  try{
  const auth=await requirePermission('events:write');if(auth.error)return fail(auth.error,auth.error==='unauthorized'?401:403);
  const {id}=await params;if(!uuid.test(id))return fail('Invalid ID',400);
