@@ -49,8 +49,7 @@ export async function PATCH(req:NextRequest,{params}:Context){
  ), revoked AS (
   UPDATE auth_sessions SET revoked_at=NOW()
   WHERE user_id=${id}::uuid AND organization_id=${auth.user.organizationId}::uuid
-   AND ${mustRevoke}::boolean AND id IN (SELECT id FROM auth_sessions WHERE user_id=${id}::uuid)
-   AND EXISTS(SELECT 1 FROM changed)
+   AND ${mustRevoke}::boolean AND EXISTS(SELECT 1 FROM changed)
   RETURNING id
  )
  SELECT c.id,c.name,c.email,c.role,c.active,(SELECT count(*) FROM revoked)::int AS revoked_count FROM changed c
