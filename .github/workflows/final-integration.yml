@@ -37,5 +37,4 @@ jobs:
       - name: Verify canonical schema migration committed
         run: |
           npm run db:generate
-          cat drizzle/0011_*.sql || true
           git diff --exit-code -- drizzle/
