@@ -1,7 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
-import {and,eq} from 'drizzle-orm';
+import {and,eq,sql} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
-import {events,eventCosts,vendors,auditLogs} from '@/db/schema';
+import {events,vendors} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
 import {parseExpense} from '@/lib/budget-validation';
 export const runtime='nodejs';export const dynamic='force-dynamic';
@@ -16,8 +16,21 @@ export async function POST(req:NextRequest){
  const [event]=await db.select({id:events.id}).from(events).where(and(eq(events.id,input.eventId),eq(events.organizationId,org))).limit(1);if(!event)return fail('Event not found',404);
  if(input.vendorId){const [vendor]=await db.select({id:vendors.id}).from(vendors).where(and(eq(vendors.id,input.vendorId),eq(vendors.organizationId,org))).limit(1);if(!vendor)return fail('Vendor not found',404)}
  // This ledger is independent of PO commitments. No inference that an actual expense settles a PO.
- const [cost]=await db.insert(eventCosts).values({...input,organizationId:org,status:'actual'}).returning();
- await db.insert(auditLogs).values({organizationId:org,actorId:a.user.id,action:'expense.created',resourceType:'event_cost',resourceId:cost.id,details:JSON.stringify({eventId:cost.eventId,amount:cost.amount})});
- return NextResponse.json({expense:cost},{status:201,headers:{'Cache-Control':'no-store'}});
+ const result=await db.execute(sql`
+  WITH inserted AS (
+   INSERT INTO event_costs (organization_id,event_id,vendor_id,description,amount,status)
+   VALUES (${org}::uuid,${input.eventId}::uuid,${input.vendorId}::uuid,${input.description},${input.amount}::numeric,'actual')
+   RETURNING id,event_id,vendor_id,description,amount,status,created_at
+  ), logged AS (
+   INSERT INTO audit_logs (organization_id,actor_id,action,resource_type,resource_id,details)
+   SELECT ${org}::uuid,${a.user.id}::uuid,'expense.created','event_cost',inserted.id,
+          json_build_object('eventId',inserted.event_id,'amount',inserted.amount)::text
+   FROM inserted RETURNING id
+  )
+  SELECT inserted.* FROM inserted CROSS JOIN logged
+ `);
+ const expense=result.rows[0];
+ if(!expense)return fail('Expense was not created',503);
+ return NextResponse.json({expense},{status:201,headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Expense service unavailable',503)}
 }
