@@ -103,8 +103,9 @@ export const payments = pgTable('invoice_payments',{
  amount:numeric('amount',{precision:18,scale:2}).notNull(),
  paidAt:timestamp('paid_at',{withTimezone:true}).notNull().defaultNow(),
  reference:varchar('reference',{length:160}),
+ idempotencyKey:varchar('idempotency_key',{length:80}),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
-},t=>[index('invoice_payments_invoice_idx').on(t.invoiceId)]);
+},t=>[index('invoice_payments_invoice_idx').on(t.invoiceId),uniqueIndex('invoice_payments_idempotency_idx').on(t.organizationId,t.invoiceId,t.idempotencyKey)]);
 export const auditLogs = pgTable('audit_logs',{
  id:uuid('id').primaryKey().defaultRandom(),
  organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
