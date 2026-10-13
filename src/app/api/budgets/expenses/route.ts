@@ -1,4 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
+import { isTrustedOrigin } from '@/lib/security';
 import {and,eq,sql} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
 import {events,vendors} from '@/db/schema';
@@ -7,7 +8,7 @@ import {parseExpense} from '@/lib/budget-validation';
 export const runtime='nodejs';export const dynamic='force-dynamic';
 const fail=(error:string,status:number)=>NextResponse.json({error},{status,headers:{'Cache-Control':'no-store'}});
 export async function POST(req:NextRequest){
- const origin=req.headers.get('origin');if(origin&&origin!==req.nextUrl.origin)return fail('Origin not allowed',403);
+ if(!isTrustedOrigin(req.headers.get('origin'),req.url,process.env.NODE_ENV==='production'))return fail('Origin not allowed',403);
  try{
  const a=await requirePermission('finance:write');if(a.error)return fail(a.error,a.error==='unauthorized'?401:403);
  if(!(req.headers.get('content-type')||'').includes('application/json'))return fail('Expected JSON',415);
