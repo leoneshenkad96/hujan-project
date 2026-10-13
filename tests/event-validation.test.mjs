@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {parseEvent,parseEventStatus,parseProgress} from '../src/lib/event-validation.ts';
+const id='1187bd11-620f-4e82-8007-422b7e501e18';
+const valid={title:'Annual Gathering',type:'Corporate',eventDate:'2026-11-15',clientId:id,contractValue:'50000000.00',approvedBudget:'30000000.00'};
+test('event payload accepts valid values',()=>assert.equal(parseEvent(valid)?.title,'Annual Gathering'));
+test('event requires existing client uuid',()=>assert.equal(parseEvent({...valid,clientId:'bad'}),null));
+test('event refuses malformed calendar date',()=>assert.equal(parseEvent({...valid,eventDate:'2026-02-30'}),null));
+test('money values reject exponent or negative amounts',()=>{assert.equal(parseEvent({...valid,contractValue:'1e9'}),null);assert.equal(parseEvent({...valid,approvedBudget:'-1'}),null)});
+test('progress range and enum status enforced',()=>{assert.equal(parseProgress(100),100);assert.equal(parseProgress(101),null);assert.equal(parseEventStatus('live'),'live');assert.equal(parseEventStatus('unknown'),null)});
