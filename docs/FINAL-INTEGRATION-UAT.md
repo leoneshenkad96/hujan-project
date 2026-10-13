@@ -104,3 +104,14 @@ This section is the current release gate; earlier historical checkpoints above a
 - [ ] Explicit Owner signoff for PR merges, production Neon migration and Vercel production deployment.
 
 **Non-goals:** no new functional modules, no production migrations, no production release until all gates are evidenced. Keep the ERP Vinca environment separate from Kasapink ERP.
+
+
+### P0 activation diagnostics (2026-10-13, verified read-only)
+- [x] Vercel Preview deployment for commit `70db1de` reached `READY` (build only).
+- [x] Resend account has an API key listed, but **no verified sender domain**; API key metadata alone cannot provide the secret value to Vercel.
+- [x] Branch-scoped Vercel activation configuration checked: `UAT_ACTIVATION_ENABLED` is not `true`, and `UAT_ACTIVATION_BASE_URL` does not match the tested deployment URL or branch alias.
+- [ ] Set a verified sender (or an authorized Resend test sender for its permitted recipient), securely provision Resend sending key under Preview only; never write keys to GitHub.
+- [ ] Configure a stable approved Preview origin, verify domain protection/access, set `UAT_ACTIVATION_ENABLED=true` **after** the email/URL/database checks, redeploy Preview, then test activation and login.
+- [ ] Verify exact Neon branch target and proceed with multi-tenant and finance HTTP tests on disposable fixtures only.
+
+No production configuration or database was changed by these diagnostics.
