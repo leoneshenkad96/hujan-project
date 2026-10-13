@@ -1,4 +1,5 @@
 import { NextRequest,NextResponse } from 'next/server';
+import { isTrustedOrigin } from '@/lib/security';
 import { and,asc,eq,ilike,or } from 'drizzle-orm';
 import { getDatabase } from '@/db/client';
 import { clients } from '@/db/schema';
@@ -18,7 +19,7 @@ export async function GET(req:NextRequest){
  }catch{return response('CRM unavailable',503)}
 }
 export async function POST(req:NextRequest){
- const origin=req.headers.get('origin');if(origin&&origin!==req.nextUrl.origin)return response('Origin not allowed',403);
+ if(!isTrustedOrigin(req.headers.get('origin'),req.url,process.env.NODE_ENV==='production'))return response('Origin not allowed',403);
  try{
  const {user,error}=await requirePermission('clients:write');if(error)return response(error,error==='unauthorized'?401:403);
  if(!(req.headers.get('content-type')||'').includes('application/json'))return response('Expected JSON',415);
