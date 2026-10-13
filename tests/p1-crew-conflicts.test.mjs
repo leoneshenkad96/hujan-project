@@ -20,6 +20,6 @@ test('crew API verifies permissions, tenant scope and time ordering',()=>{
 });
 test('crew migration is appended after lead follow-ups',()=>{
  const entries=JSON.parse(readFileSync('drizzle/meta/_journal.json','utf8')).entries;
- assert.equal(entries.at(-1)?.tag,'0016_crew_assignments');
- assert.equal(entries.at(-2)?.tag,'0015_lead_follow_ups');
+ assert.equal(entries.find(x=>x.idx===16)?.tag,'0016_crew_assignments');
+ assert.equal(entries.find(x=>x.idx===15)?.tag,'0015_lead_follow_ups');
 });
