@@ -67,3 +67,40 @@ A green GitHub integration check means code compiles and static tests pass. It i
 - Finance reconciliation read-only endpoint and regressions passed CI, but there are no test invoices/payments to assess.
 - GitHub README refreshed with setup, modules, environment safety, UAT gates, and production NO-GO.
 - Email sender/Preview activation flow still blocked until configuration and Vercel Preview redeploy; no actual activation email sent.
+
+
+## P0 Gate Tracker — 2026-10-13 (live status)
+
+This section is the current release gate; earlier historical checkpoints above are retained for audit history.
+
+**Release decision: NO-GO. Do not merge or deploy to production while unchecked blocking items remain.**
+
+### Gate A — Integration and safe preview
+- [x] Confirm integration branch `integration/final-uat` is ahead of `main` without being behind (251 commits ahead as checked).
+- [x] GitHub PR #17 CI reports success in its last recorded run; passing CI is not equivalent to live UAT.
+- [x] Vercel Preview deployment `dpl_3CbNJ1Y8SNVn2WHpxghj95MPvv6u`, commit `70db1de`, reached READY. This proves build readiness only.
+- [ ] Re-run CI on the exact final tested commit and reconcile the stacked PR diff/reviews before merge.
+
+### Gate B — Owner authentication (blocking)
+- [x] Isolated UAT Neon branch has nine migrations, one organization, one inactive Owner, zero payments.
+- [ ] Configure and verify preview-only `RESEND_API_KEY` and `ACTIVATION_FROM_EMAIL`; these were absent from the Vercel project environment variable listing.
+- [ ] Verify preview deployment URL, `UAT_ACTIVATION_BASE_URL`, and `DATABASE_URL` refer to the intended isolated UAT environment, without exposing secrets.
+- [ ] Send activation email and verify one-time expiry/consumption, then Owner login/logout and session expiration.
+
+### Gate C — Access control / tenant isolation (blocking)
+- [ ] Provision a second disposable organization and least-privilege accounts (UAT only).
+- [ ] Execute authenticated cross-tenant and role-matrix HTTP tests, including 401/403/404, CSRF/Origin, brute-force throttling and IDOR.
+- [ ] Inspect test logs and verify sensitive financial data is never returned to unauthorized roles.
+
+### Gate D — Finance invariants (blocking)
+- [ ] Create disposable invoices and payments in isolated UAT only.
+- [ ] Execute concurrent payments, same-key retry, conflicting-key reuse, overpayment, rollback and reconciliation tests; confirm the persisted ledger matches invoice balances and audit rows.
+- [ ] Review finance approval/contract semantics and resulting dashboard amounts.
+
+### Gate E — Operational release safety (blocking)
+- [ ] Run end-to-end CRM → Event → Vendor/PO → RAB → Rundown → Quotation/Contract → Invoice → Payment → Report test.
+- [ ] Verify responsive iPhone/tablet/desktop flows and basic accessibility.
+- [ ] Perform a disposable backup/restore drill, confirm production schema/migration plan and separate secrets.
+- [ ] Explicit Owner signoff for PR merges, production Neon migration and Vercel production deployment.
+
+**Non-goals:** no new functional modules, no production migrations, no production release until all gates are evidenced. Keep the ERP Vinca environment separate from Kasapink ERP.
