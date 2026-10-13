@@ -22,7 +22,7 @@ export const users = pgTable('users',{
  role:varchar('role',{length:40}).notNull().default('crew'),
  active:boolean('active').notNull().default(true),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
-},t=>[uniqueIndex('users_org_email_idx').on(t.organizationId,t.email),uniqueIndex('users_email_global_normalized_idx').on(sql`lower(trim(${t.email}))`]);
+},t=>[uniqueIndex('users_org_email_idx').on(t.organizationId,t.email),uniqueIndex('users_email_global_normalized_idx').on(sql`lower(trim(${t.email}))`)];
 export const clients = pgTable('clients',{
  id:uuid('id').primaryKey().defaultRandom(),
  organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
