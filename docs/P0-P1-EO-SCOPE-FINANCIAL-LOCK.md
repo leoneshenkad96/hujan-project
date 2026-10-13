@@ -65,3 +65,13 @@ A passing CI means source checks pass; it does NOT establish real transaction co
 - [ ] Full granular versioned approvals, quote PDF export, PO-to-expense matching and forecast RAB are separate P1 work, not certified as completed here.
 
 **Accounting boundary:** Quotation total is a commercial selling price; approved RAB is a project budget (expected cost), PO commitment and actual expense are separate. Creating or approving a quote must not automatically count its amount as direct expense or overwrite approved RAB. Applicable tax configuration is operator-entered, not inferred from Indonesian tax law.
+
+
+## Isolated Neon UAT migration checkpoint — 2026-10-13
+- [x] Project `fancy-cell-64250119`, branch `br-long-wildflower-b3nsciay`, database `eventorganizer` verified **at the server** before write.
+- [x] Three append-only schema migrations `0010`–`0012` applied in one atomic database transaction; Drizzle ledger now **13** records, with SHA-256 hashes derived from the exact committed SQL migration files.
+- [x] Read-back confirmed all 5 quotation columns, the expense-to-PO FK, matched PO balance, and `purchase_orders_matched_amount_valid` check constraint.
+- [x] Before migration: 0 quotation records, 0 purchase orders, 0 expenses; therefore there were no pre-existing financial transactions to reconcile.
+- [ ] Real write-path tests, concurrent expense-to-PO test, quotation creation/revision, authenticated multi-tenant flows: **NOT YET VERIFIED**.
+- [ ] Owner first-login bootstrap remains blocked until private password provisioning. No UAT server URL available for authenticated E2E.
+- [ ] No Vercel calls, `main` merge, production database mutation, or release deployment.
