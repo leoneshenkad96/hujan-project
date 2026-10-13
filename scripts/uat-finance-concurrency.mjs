@@ -13,7 +13,7 @@ if(missing.length||e.UAT_FINANCE_WRITE_ACK!=='DISPOSABLE_UAT_ONLY'){
  console.error('NOT RUN: explicit disposable UAT write approval and isolated fixtures required:',missing.join(', '));process.exit(2);
 }
 const origin=new URL(e.UAT_BASE_URL).origin;
-if(origin!==e.UAT_EXACT_ALLOWED_ORIGIN||!origin.startsWith('https://')||!origin.endsWith('.vercel.app')||/kasapink-erp|erp\.kasapink/i.test(origin)){
+if(origin!==e.UAT_EXACT_ALLOWED_ORIGIN||!origin.startsWith('https://')||!origin.endsWith('.vercel.app')||!/^https:\/\/eo-/.test(origin)||/kasapink-erp|erp\.kasapink/i.test(origin)){
  throw new Error('Refusing unapproved/non-HTTPS/non-UAT origin');
 }
 if(e.UAT_ORG_A===e.UAT_ORG_B||e.UAT_INVOICE_A===e.UAT_INVOICE_B){
@@ -58,6 +58,5 @@ const history=await fetchApi(paymentPath,{headers:{cookie:cookieA}});
 assert.equal(history.status,200);
 const ledger=await history.json();
 assert.equal(ledger.items.filter(x=>x.id===first.body.payment.id).length,1);
-const reconcile=await fetchApi('/api/finance/reconciliation?eventId='+e.UAT_EVENT_A,{headers:{cookie:cookieA}});
-if(e.UAT_EVENT_A){assert.equal(reconcile.status,200);const details=await reconcile.json();assert.ok(!details.items.some(x=>x.invoice_id===e.UAT_INVOICE_A),'No payment discrepancy expected')}
+if(e.UAT_EVENT_A){assert.match(e.UAT_EVENT_A,uuid);const reconcile=await fetchApi('/api/finance/reconciliation?eventId='+e.UAT_EVENT_A,{headers:{cookie:cookieA}});assert.equal(reconcile.status,200);const details=await reconcile.json();assert.ok(!details.items.some(x=>x.invoice_id===e.UAT_INVOICE_A),'No payment discrepancy expected')}
 console.log('PASS payment row persisted once; additional credit and audit scenarios require separately prepared fixtures');
