@@ -37,7 +37,7 @@ jobs:
       - name: Generate canonical activation migration
         run: npm run db:generate
       - name: Commit generated migration to UAT branch
-        if: github.event_name == 'push'
+        if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
