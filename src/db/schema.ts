@@ -135,3 +135,11 @@ export const authSessions = pgTable('auth_sessions',{
  revokedAt:timestamp('revoked_at',{withTimezone:true}),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
 },t=>[index('auth_sessions_user_idx').on(t.userId),index('auth_sessions_expiry_idx').on(t.expiresAt)]);
+
+/** Server-side login throttle; stores SHA-256 identifiers, never raw IPs/emails. */
+export const authLoginLimits = pgTable('auth_login_limits',{
+ key:varchar('key',{length:64}).primaryKey(),
+ windowStartedAt:timestamp('window_started_at',{withTimezone:true}).notNull(),
+ attempts:integer('attempts').notNull().default(0),
+ updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow()
+});
