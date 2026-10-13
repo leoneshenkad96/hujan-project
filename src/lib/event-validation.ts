@@ -19,3 +19,15 @@ export function parseEventStatus(v:unknown):EventStatus|null{
 export function parseProgress(v:unknown):number|null{
  return typeof v==='number'&&Number.isInteger(v)&&v>=0&&v<=100?v:null;
 }
+
+export const EVENT_TRANSITIONS:Record<EventStatus,readonly EventStatus[]>={
+ planning:['confirmed','cancelled'],
+ confirmed:['pre_production','cancelled'],
+ pre_production:['live','cancelled'],
+ live:['completed','cancelled'],
+ completed:[],
+ cancelled:[]
+};
+export function canTransitionEvent(from:EventStatus,to:EventStatus):boolean {
+ return EVENT_TRANSITIONS[from].includes(to);
+}
