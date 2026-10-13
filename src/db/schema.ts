@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, varchar, text, integer, numeric, timestamp, date, uniqueIndex, index, boolean, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, varchar, text, integer, numeric, timestamp, date, uniqueIndex, index, boolean, jsonb, check } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
 export const eventStatus = pgEnum('event_status', ['planning','confirmed','pre_production','live','completed','cancelled']);
@@ -160,7 +160,7 @@ export const purchaseOrders=pgTable('purchase_orders',{
  status:purchaseOrderStatus('status').notNull().default('draft'),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
  updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow()
-},t=>[uniqueIndex('purchase_orders_org_number_idx').on(t.organizationId,t.number),index('purchase_orders_event_idx').on(t.eventId),index('purchase_orders_vendor_idx').on(t.vendorId)]);
+},t=>[uniqueIndex('purchase_orders_org_number_idx').on(t.organizationId,t.number),index('purchase_orders_event_idx').on(t.eventId),index('purchase_orders_vendor_idx').on(t.vendorId),check('purchase_orders_matched_amount_valid',sql`${t.matchedActual} >= 0 AND ${t.matchedActual} <= ${t.amount}`)]);
 
 export const rundownStatus=pgEnum('rundown_status',['planned','standby','on_air','done','skipped']);
 export const rundownItems=pgTable('rundown_items',{
