@@ -9,5 +9,10 @@ test('user provisioning requires server-side permission, organization scope, ori
  assert.ok(!list.includes('passwordHash:users.passwordHash'));
 });
 test('admin edits are tenant-scoped and revoke prior sessions on credential or permission changes',()=>{
- for(const marker of ['requirePermission(\'users:manage\')','isTrustedOrigin(','users.organizationId,auth.user.organizationId','authSessions','revokedAt:new Date()','Only owner may manage owner accounts'])assert.ok(update.includes(marker),marker);
+ for(const marker of ['requirePermission(\'users:manage\')','isTrustedOrigin(','users.organizationId,auth.user.organizationId','WITH changed AS','UPDATE auth_sessions SET revoked_at=NOW()','EXISTS(SELECT 1 FROM changed)','Only owner may manage owner accounts'])assert.ok(update.includes(marker),marker);
+});
+
+test('account and session changes share a single atomic SQL statement',()=>{
+ assert.match(update,/WITH changed AS[\s\S]*revoked AS[\s\S]*UPDATE auth_sessions/);
+ assert.match(update,/AND EXISTS\(SELECT 1 FROM changed\)/);
 });
