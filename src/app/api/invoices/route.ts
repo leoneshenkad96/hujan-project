@@ -14,6 +14,7 @@ export async function GET(req:NextRequest){
  const eventId=req.nextUrl.searchParams.get('eventId');if(eventId&&!uuid.test(eventId))return fail('Invalid eventId',400);
  const page=Number(req.nextUrl.searchParams.get('page')||1),limit=Number(req.nextUrl.searchParams.get('limit')||20);
  if(!Number.isSafeInteger(page)||page<1||page>10000||!Number.isSafeInteger(limit)||limit<1||limit>100)return fail('Invalid pagination',400);
+ if(eventId){const [owned]=await getDatabase().select({id:events.id}).from(events).where(and(eq(events.id,eventId),eq(events.organizationId,auth.user.organizationId))).limit(1);if(!owned)return fail('Event not found',404)}
  const rows=await getDatabase().select().from(invoices).where(and(eq(invoices.organizationId,auth.user.organizationId),eventId?eq(invoices.eventId,eventId):undefined)).orderBy(desc(invoices.createdAt),desc(invoices.id)).limit(limit+1).offset((page-1)*limit);
  return NextResponse.json({items:rows.slice(0,limit).map(x=>({...x,balance:invoiceBalance(x.amount,x.paidAmount)})),page,limit,hasMore:rows.length>limit},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Invoices unavailable',503)}
