@@ -4,7 +4,7 @@ import {and,eq} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
 import {events} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
-import {parseEventStatus,parseProgress} from '@/lib/event-validation';
+import {parseEventStatus,parseProgress,canTransitionEvent} from '@/lib/event-validation';
 export const runtime='nodejs';export const dynamic='force-dynamic';
 const fail=(error:string,status:number)=>NextResponse.json({error},{status,headers:{'Cache-Control':'no-store'}});
 type Context={params:Promise<{id:string}>};
@@ -14,7 +14,7 @@ export async function GET(_req:NextRequest,{params}:Context){
  const auth=await requirePermission('events:read');if(auth.error)return fail(auth.error,auth.error==='unauthorized'?401:403);
  const {id}=await params;if(!uuid.test(id))return fail('Invalid ID',400);
  const [event]=await getDatabase().select().from(events).where(and(eq(events.id,id),eq(events.organizationId,auth.user.organizationId))).limit(1);
- if(!event)return fail('Event not found',404);
+ if(!event)return fail('Concurrent event update conflict',409);
  return NextResponse.json({event},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Event service unavailable',503)}
 }
@@ -30,7 +30,14 @@ export async function PATCH(req:NextRequest,{params}:Context){
  const status=x.status===undefined?undefined:parseEventStatus(x.status);
  const progress=x.progress===undefined?undefined:parseProgress(x.progress);
  if(status===null||progress===null)return fail('Invalid status or progress',400);
- const [event]=await getDatabase().update(events).set({...status?{status}:{},...progress!==undefined?{progress}:{},updatedAt:new Date()}).where(and(eq(events.id,id),eq(events.organizationId,auth.user.organizationId))).returning();
+ const db=getDatabase(),org=auth.user.organizationId;
+ const [existing]=await db.select({status:events.status,progress:events.progress}).from(events).where(and(eq(events.id,id),eq(events.organizationId,org))).limit(1);
+ if(!existing)return fail('Event not found',404);
+ if(status!==undefined&&status!==existing.status&&!canTransitionEvent(existing.status,status))return fail('Invalid event status transition',409);
+ if(existing.status==='completed'||existing.status==='cancelled')return fail('Closed event cannot be modified',409);
+ if(status==='completed'&&progress!==undefined&&progress!==100)return fail('Completed event must have 100% progress',400);
+ const update={...(status!==undefined?{status}:{}),...(progress!==undefined?{progress}:{}),...(status==='completed'?{progress:100}:{}),updatedAt:new Date()};
+ const [event]=await db.update(events).set(update).where(and(eq(events.id,id),eq(events.organizationId,org),eq(events.status,existing.status))).returning();
  if(!event)return fail('Event not found',404);
  return NextResponse.json({event},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Event service unavailable',503)}
