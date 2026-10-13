@@ -123,3 +123,13 @@ Migration `0014_tenant_guard_completion` protects the six previously missing rel
 - [ ] Authenticated multi-role HTTP authorization and Owner login remain unverified; full release remains blocked.
 - [ ] Additional regression probes against new main UAT guards (no mock business fixtures there) remain distinct from successful disposable-branch tests.
 No production database mutation or deployment.
+
+
+## P0 mobile-only audit checkpoint — 2026-10-13
+- [x] Main isolated Neon UAT: all fifteen committed migrations and twelve tenant-relationship triggers verified. Owner login-ready accounts remain zero.
+- [x] Source review: `src/lib/permissions.ts` implements seven default-deny roles; finance read/write require finance-scoped grants; invoice payment, profitability, and expense routes use server-side `requirePermission` with organization binding.
+- [x] Source review: payment POST requires an idempotency key, replays an identical invoice-scoped request, rejects reuse with different amount/reference, and combines conditional paid balance, payment ledger, and audit log in one SQL statement. Further authenticated HTTP concurrency testing is mandatory for release.
+- [x] Added `tests/p0-financial-rbac.test.mjs` and `tests/p0-payment-atomic-guards.test.mjs` to prevent regressions; GitHub CI successful on integration branch.
+- [ ] Comprehensive verification of every non-finance endpoint and role-specific application UI requires additional endpoint inventory / authenticated tests. The scoped source audit must not be called full application RBAC certification.
+- [ ] Owner bootstrap, live HTTP session/cookie/CSRF, payment replay and concurrency via actual API, event E2E and screenshot checks remain pending because no authenticated UAT app is running.
+**Release status: NO-GO** until those runtime checks are complete. No Vercel, merge, production changes, or deployment.
