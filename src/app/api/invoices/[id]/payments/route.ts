@@ -4,7 +4,7 @@ import {and,asc,eq,sql} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
 import {invoices,payments} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
-import {paymentInput,uuid} from '@/lib/invoice-validation';
+import {paymentInput,uuid,minor} from '@/lib/invoice-validation';
 export const runtime='nodejs';export const dynamic='force-dynamic';
 type Context={params:Promise<{id:string}>};
 const fail=(error:string,status:number)=>NextResponse.json({error},{status,headers:{'Cache-Control':'no-store'}});
@@ -30,7 +30,7 @@ export async function POST(req:NextRequest,{params}:Context){
  const org=auth.user.organizationId,db=getDatabase();
  const findReplay=async()=>{const [existing]=await db.select().from(payments).where(and(eq(payments.organizationId,org),eq(payments.invoiceId,id),eq(payments.idempotencyKey,key))).limit(1);return existing};
  const replay=await findReplay();
- if(replay){if(replay.amount!==input.amount&&Number(replay.amount)!==Number(input.amount)||replay.reference!==input.reference)return fail('Idempotency key used with different payment',409);return NextResponse.json({payment:replay,replayed:true},{status:200,headers:{'Cache-Control':'no-store'}})}
+ if(replay){if(minor(replay.amount)!==minor(input.amount)||replay.reference!==input.reference)return fail('Idempotency key used with different payment',409);return NextResponse.json({payment:replay,replayed:true},{status:200,headers:{'Cache-Control':'no-store'}})}
  // An UPDATE obtains an invoice row lock and conditionally increments its paid balance.
  // The payment row and audit record are created in the same statement; no overpayment race.
  let result;
@@ -61,7 +61,7 @@ export async function POST(req:NextRequest,{params}:Context){
  JOIN logged l ON true
  `)}catch(error){
   const original=await findReplay();
-  if(original){if(original.amount!==input.amount&&Number(original.amount)!==Number(input.amount)||original.reference!==input.reference)return fail('Idempotency key used with different payment',409);return NextResponse.json({payment:original,replayed:true},{status:200,headers:{'Cache-Control':'no-store'}})}
+  if(original){if(minor(original.amount)!==minor(input.amount)||original.reference!==input.reference)return fail('Idempotency key used with different payment',409);return NextResponse.json({payment:original,replayed:true},{status:200,headers:{'Cache-Control':'no-store'}})}
   throw error;
  }
  const payment=result.rows[0];
