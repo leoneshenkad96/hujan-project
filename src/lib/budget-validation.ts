@@ -25,5 +25,5 @@ export function summarizeBudget(approved:string,actualAmounts:string[],committed
  const actual=actualAmounts.reduce((s,v)=>s+minorUnits(v),0n);
  const commitments=committedAmounts.reduce((s,v)=>s+minorUnits(v),0n);
  const budget=minorUnits(approved);
- return {approvedBudget:formatMinor(budget),actualSpent:formatMinor(actual),openCommitments:formatMinor(commitments),remainingAfterActual:formatMinor(budget-actual),remainingAfterCommitmentsOnly:formatMinor(budget-commitments)};
+ return {approvedBudget:formatMinor(budget),actualSpent:formatMinor(actual),openCommitments:formatMinor(commitments),remainingAfterActual:formatMinor(budget-actual),budgetVarianceActualMinusApproved:formatMinor(actual-budget),remainingAfterCommitmentsOnly:formatMinor(budget-commitments)};
 }
