@@ -1,5 +1,5 @@
 const minorUnits=(v:string):bigint=>{
- if(!/^\\d{1,16}(?:\\.\\d{1,2})?$/.test(v))throw Error('Invalid cost decimal');
+ if(!/^\d{1,16}(?:\.\d{1,2})?$/.test(v))throw Error('Invalid cost decimal');
  const [whole,fraction='']=v.split('.');
  return BigInt(whole)*100n+BigInt((fraction+'00').slice(0,2));
 };
