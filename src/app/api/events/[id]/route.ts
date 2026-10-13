@@ -38,7 +38,7 @@ export async function PATCH(req:NextRequest,{params}:Context){
  if(status==='completed'&&progress!==undefined&&progress!==100)return fail('Completed event must have 100% progress',400);
  const update={...(status!==undefined?{status}:{}),...(progress!==undefined?{progress}:{}),...(status==='completed'?{progress:100}:{}),updatedAt:new Date()};
  const [event]=await db.update(events).set(update).where(and(eq(events.id,id),eq(events.organizationId,org),eq(events.status,existing.status),status==='completed'?notExists(db.select({id:tasks.id}).from(tasks).where(and(eq(tasks.organizationId,org),eq(tasks.eventId,id),notInArray(tasks.status,['done'])))):undefined,status==='completed'?notExists(db.select({id:rundownItems.id}).from(rundownItems).where(and(eq(rundownItems.organizationId,org),eq(rundownItems.eventId,id),notInArray(rundownItems.status,['done','skipped'])))):undefined)).returning();
- if(!event)return fail('Event update conflict or incomplete tasks/rundown',409);
+ if(!event)return fail('Concurrent event update conflict or incomplete tasks/rundown',409);
  return NextResponse.json({event},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Event service unavailable',503)}
 }
