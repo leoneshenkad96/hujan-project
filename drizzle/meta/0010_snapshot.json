@@ -1656,7 +1656,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "1"
+          "default": 1
         },
         "previous_quotation_id": {
           "name": "previous_quotation_id",
