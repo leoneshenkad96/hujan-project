@@ -9,8 +9,9 @@ export function parseExpense(v:unknown){
  const description=typeof x.description==='string'?x.description.trim():'';
  const amount=parseMoney(x.amount);
  const vendorId=x.vendorId==null||x.vendorId===''?null:x.vendorId;
- if(!description||description.length>240||!amount||Number(amount)===0||typeof x.eventId!=='string'||!uuid.test(x.eventId)||(vendorId!==null&&(typeof vendorId!=='string'||!uuid.test(vendorId))))return null;
- return {description,amount,eventId:x.eventId,vendorId:vendorId as string|null};
+ const purchaseOrderId=x.purchaseOrderId==null||x.purchaseOrderId===''?null:x.purchaseOrderId;
+ if(!description||description.length>240||!amount||Number(amount)===0||typeof x.eventId!=='string'||!uuid.test(x.eventId)||(vendorId!==null&&(typeof vendorId!=='string'||!uuid.test(vendorId)))||(purchaseOrderId!==null&&(typeof purchaseOrderId!=='string'||!uuid.test(purchaseOrderId))))return null;
+ return {description,amount,eventId:x.eventId,vendorId:vendorId as string|null,purchaseOrderId:purchaseOrderId as string|null};
 }
 export function minorUnits(v:string):bigint{
  const [major,minor='']=v.split('.');
