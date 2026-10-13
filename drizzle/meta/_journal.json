@@ -71,6 +71,13 @@
       "when": 1791889966204,
       "tag": "0009_email_global_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791891900000,
+      "tag": "0010_quotation_line_items",
+      "breakpoints": true
     }
   ]
 }
