@@ -80,6 +80,7 @@ export const eventCosts = pgTable('event_costs',{
  organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
  eventId:uuid('event_id').notNull().references(()=>events.id),
  vendorId:uuid('vendor_id').references(()=>vendors.id),
+ purchaseOrderId:uuid('purchase_order_id').references(()=>purchaseOrders.id),
  description:varchar('description',{length:240}).notNull(),
  amount:numeric('amount',{precision:18,scale:2}).notNull(),
  status:costStatus('status').notNull().default('planned'),
