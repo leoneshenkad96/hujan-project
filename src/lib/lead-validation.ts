@@ -16,6 +16,6 @@ export function parseLead(v:unknown){
  const title=typeof x.title==='string'?x.title.trim():'';
  const clientId=x.clientId==null||x.clientId===''?null:x.clientId;
  const estimatedValue=typeof x.estimatedValue==='string'?x.estimatedValue:typeof x.estimatedValue==='number'&&Number.isSafeInteger(x.estimatedValue)?String(x.estimatedValue):'';
- if(Object.keys(x).some(k=>!['title','clientId','estimatedValue'].includes(k))||!title||title.length>180||(clientId!==null&&!validLeadId(clientId))||!/^\\d{1,16}(?:\\.\\d{1,2})?$/.test(estimatedValue))return null;
+ if(Object.keys(x).some(k=>!['title','clientId','estimatedValue'].includes(k))||!title||title.length>180||(clientId!==null&&!validLeadId(clientId))||!/^\d{1,16}(?:\.\d{1,2})?$/.test(estimatedValue))return null;
  return {title,clientId:clientId as string|null,estimatedValue};
 }
