@@ -75,3 +75,19 @@ A passing CI means source checks pass; it does NOT establish real transaction co
 - [ ] Real write-path tests, concurrent expense-to-PO test, quotation creation/revision, authenticated multi-tenant flows: **NOT YET VERIFIED**.
 - [ ] Owner first-login bootstrap remains blocked until private password provisioning. No UAT server URL available for authenticated E2E.
 - [ ] No Vercel calls, `main` merge, production database mutation, or release deployment.
+
+
+## Disposable Neon financial-transaction UAT — 2026-10-13
+- Disposable **child** of isolated UAT: `br-hidden-snow-b3vbe1y4` (`vinca-finance-disposable-uat-20261013`). It does **not** target production or the original UAT Owner's environment.
+- Fixture: 2 organizations, 2 clients, 2 events (wedding and reunion), vendor, quote, PO, invoice. **Direct SQL exercises database constraints; it is not an authenticated API test.**
+- **1 Quote line items:** PASS: itemized quotation persisted in PostgreSQL JSONB.
+- **2 Financial arithmetic:** PASS on fixture: subtotal 42,000,000; discount 2,000,000; tax 4,400,000; total 44,400,000. Tax 11% is arbitrary test input, not a tax-law assumption. Pure TypeScript quotation calculator also protected by regression tests.
+- **3 Revision & contract references:** PASS at SQL relationship level: new revision row linked to predecessor; contract snapshots accepted quote amount. Endpoint permission/status lifecycle not proven by this SQL test.
+- **4 PO and actual expense:** PASS: 4,000,000 expense created with explicit PO relation and audit.
+- **5 Partial payment:** PASS: payment 20,000,000; invoice 44,400,000; outstanding 24,400,000; payment ledger equals invoice paid amount. HTTP idempotency is not proven here.
+- **6 PO overspend:** PASS: check constraint rejects update to matched_actual=12,000,000 for a 10,000,000 PO.
+- **7 Concurrency:** PASS on disposable branch: simultaneous 4,000,000 expense attempts with 6,000,000 PO capacity remaining resulted in exactly one new expense/audit; PO final matched balance 8,000,000 and remaining 2,000,000. This confirms SQL row-guard behavior for tested workload, not every production load.
+- **8 Tenant isolation:** **FAIL initially, FIXED and PASS on retest.** Raw SQL could insert an invoice for organization B against organization A's event. Migration `0013_tenant_link_guards` adds DB triggers guarding cross-org references for events, quotations, contracts, POs, expenses, invoices and payments. Retest of cross-org invoice, PO/vendor and payment all rejected; no invalid new records persisted.
+- The disposable test branch has **14 applied migration records** including `0013`; main isolated UAT `br-long-wildflower-b3nsciay` remains **13** until this new migration is separately authorized/applied. Source migration and regression tests committed on `integration/final-uat`.
+- All results are *database/SQL UAT*. **Authenticated API UAT, owner onboarding, browser UX, email delivery, multi-client load testing, and production sign-off remain pending.**
+- Keep disposable branch for evidence and follow-up. Do not delete without explicit permission.
