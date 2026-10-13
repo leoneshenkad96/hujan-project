@@ -15,14 +15,19 @@
 - Drizzle snapshot: `drizzle/meta/0000_snapshot.json`
 - Generation tested in GitHub Actions run `38363741111` (typecheck, lint, build, generate: passed).
 - All monetary columns use `numeric(18,2)` so application code must handle values as decimal strings or a precise decimal type.
-- The SQL migration has **not been applied to production** or development yet. The development database is reachable but still empty.
+- **Development migration APPLIED and verified** on Neon branch `br-muddy-leaf-b34gxxf2` (11 ERP tables and `drizzle.__drizzle_migrations`; migration hash matches the checked-in SQL). No seed data was inserted.
+- **Production migration NOT RUN**. The production database remains unchanged.
 
-## Migration runbook (pending)
-1. Review the generated SQL and constraints.
-2. Confirm the target `DATABASE_URL` points to the **development branch**. Use a **direct** Neon connection for schema migrations; pooled connection for application queries.
-3. Run `npm run db:migrate` using the verified development direct connection, then check tables.
-4. Test `/api/db-health` in the protected preview and validate a sample transaction after real APIs are implemented.
-5. Only with separate approval: apply reviewed migration to production.
+## Verified development migration
+- [x] Schema reviewed and generated from `src/db/schema.ts` in GitHub Actions
+- [x] Applied initial schema as one atomic transaction to the **development branch only**
+- [x] Migration ledger created and SHA-256 hash matched
+- [x] All expected 11 ERP tables found in development database
+- [ ] Direct HTTP `/api/db-health` test on protected Vercel Preview
+- [ ] Controlled application CRUD/UAT (will require API implementation)
+
+## Production rollout (not authorized yet)
+Use a **direct** Neon connection for `npm run db:migrate` and verify the target project, branch and database first. Do not run against `production` without approval; never migrate the Kasapink project.
 
 Do not import Kasapink credentials or run migrations against Kasapink. Never commit credentials.
 
