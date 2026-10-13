@@ -4,6 +4,7 @@ import { getDatabase } from '@/db/client';
 import { organizations, users } from '@/db/schema';
 import { newSession } from '@/lib/auth';
 import { verifyPassword } from '@/lib/password';
+import { enforceLoginRateLimit } from '@/lib/login-rate-limit';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export async function POST(request:NextRequest){
@@ -18,6 +19,9 @@ export async function POST(request:NextRequest){
  if(typeof email!=='string'||typeof password!=='string'||typeof organization!=='string'||email.length>254||password.length>256||password.length===0||organization.length>80)
  return NextResponse.json({error:'Invalid credentials'},{status:401});
  try{
+  const ip=request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() ?? 'unknown';
+  const allowed=await enforceLoginRateLimit(ip,organization,email);
+  if(!allowed)return NextResponse.json({error:'Too many attempts. Try again later.'},{status:429,headers:{'Cache-Control':'no-store','Retry-After':'900'}});
   const db=getDatabase();
   const rows=await db.select({id:users.id,organizationId:users.organizationId,email:users.email,name:users.name,role:users.role,hash:users.passwordHash})
   .from(users).innerJoin(organizations,eq(users.organizationId,organizations.id))
