@@ -1576,7 +1576,7 @@
       "checkConstraints": {
         "purchase_orders_matched_amount_valid": {
           "name": "purchase_orders_matched_amount_valid",
-          "value": "\"matched_actual\" >= 0 AND \"matched_actual\" <= \"amount\""
+          "value": "\"purchase_orders\".\"matched_actual\" >= 0 AND \"purchase_orders\".\"matched_actual\" <= \"purchase_orders\".\"amount\""
         }
       },
       "isRLSEnabled": false
