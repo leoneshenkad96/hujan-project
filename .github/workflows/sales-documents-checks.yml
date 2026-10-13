@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: ['feature/10-rundown-show']
 permissions:
-  contents: write
+  contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -23,16 +23,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run db:check
-      - name: Generate Drizzle migration
-        run: npm run db:generate
-      - name: Commit generated migration to feature branch
-        if: github.event_name == 'push'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify canonical migration is checked in
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A drizzle
-          git diff --staged --quiet && exit 0
-          git commit -m "chore(sales): add canonical quotations and contracts migration"
-          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/feature/11-quotations-contracts
+          npm run db:generate
+          git diff --exit-code -- drizzle/
