@@ -2,7 +2,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import { isTrustedOrigin } from '@/lib/security';
 import {and,eq,sql} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
-import {events,vendors} from '@/db/schema';
+import {events,vendors,purchaseOrders} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
 import {parseExpense} from '@/lib/budget-validation';
 export const runtime='nodejs';export const dynamic='force-dynamic';
@@ -16,11 +16,15 @@ export async function POST(req:NextRequest){
  const db=getDatabase(),org=a.user.organizationId;
  const [event]=await db.select({id:events.id}).from(events).where(and(eq(events.id,input.eventId),eq(events.organizationId,org))).limit(1);if(!event)return fail('Event not found',404);
  if(input.vendorId){const [vendor]=await db.select({id:vendors.id}).from(vendors).where(and(eq(vendors.id,input.vendorId),eq(vendors.organizationId,org))).limit(1);if(!vendor)return fail('Vendor not found',404)}
- // This ledger is independent of PO commitments. No inference that an actual expense settles a PO.
+ if(input.purchaseOrderId){
+  const [po]=await db.select({id:purchaseOrders.id,vendorId:purchaseOrders.vendorId,status:purchaseOrders.status}).from(purchaseOrders).where(and(eq(purchaseOrders.id,input.purchaseOrderId),eq(purchaseOrders.organizationId,org),eq(purchaseOrders.eventId,input.eventId))).limit(1);
+  if(!po||po.status==='draft'||po.status==='cancelled'||(input.vendorId&&po.vendorId!==input.vendorId))return fail('Invalid purchase order match',409);
+ }
+ // Only explicit, tenant-scoped matching may reduce a purchase order commitment.
  const result=await db.execute(sql`
   WITH inserted AS (
-   INSERT INTO event_costs (organization_id,event_id,vendor_id,description,amount,status)
-   VALUES (${org}::uuid,${input.eventId}::uuid,${input.vendorId}::uuid,${input.description},${input.amount}::numeric,'actual')
+   INSERT INTO event_costs (organization_id,event_id,vendor_id,purchase_order_id,description,amount,status)
+   VALUES (${org}::uuid,${input.eventId}::uuid,${input.vendorId}::uuid,${input.purchaseOrderId}::uuid,${input.description},${input.amount}::numeric,'actual')
    RETURNING id,event_id,vendor_id,description,amount,status,created_at
   ), logged AS (
    INSERT INTO audit_logs (organization_id,actor_id,action,resource_type,resource_id,details)
