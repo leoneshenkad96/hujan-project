@@ -91,3 +91,22 @@ A passing CI means source checks pass; it does NOT establish real transaction co
 - The disposable test branch has **14 applied migration records** including `0013`; main isolated UAT `br-long-wildflower-b3nsciay` remains **13** until this new migration is separately authorized/applied. Source migration and regression tests committed on `integration/final-uat`.
 - All results are *database/SQL UAT*. **Authenticated API UAT, owner onboarding, browser UX, email delivery, multi-client load testing, and production sign-off remain pending.**
 - Keep disposable branch for evidence and follow-up. Do not delete without explicit permission.
+
+
+## Disposable UAT eight-scenario verification — 2026-10-13
+**Isolation:** Neon project `fancy-cell-64250119`, disposable child branch `br-hidden-snow-b3vbe1y4` of isolated UAT. These are **SQL-layer checks**, not authenticated HTTP API/UI UAT. Do not treat these as production sign-off.
+
+| # | Test | Observed result | Scope |
+|---|---|---|---|
+| 1 | Itemized wedding quote saved with 2 lines | PASS, 2-line JSON data present and amount Rp44,400,000 | SQL persistence |
+| 2 | Exact subtotal, discount, simulated 11% tax | PASS: Rp42,000,000 − Rp2,000,000 + Rp4,400,000 = Rp44,400,000 | SQL arithmetic + existing unit tests |
+| 3 | Quote revision and accepted quote -> contract | PASS: independent revision 2, one contract linked to original accepted quote | SQL relationships |
+| 4 | PO and matched actual expense | PASS: 2 expense rows, Rp8,000,000 matched against Rp10,000,000 PO | SQL write + ledger |
+| 5 | Partial invoice payment | PASS: Rp20,000,000 paid, Rp24,400,000 due; payment ledger agrees | SQL write + ledger |
+| 6 | PO amount cap | PASS: direct over-limit UPDATE rejected by CHECK; conditional match refuses over-cap | DB constraint / guarded SQL |
+| 7 | Parallel PO consumption | PASS in tested race: two parallel Rp4,000,000 attempts with Rp6,000,000 available -> 1 inserted, 1 rejected | Concurrent SQL statements |
+| 8 | Cross-org references | **FAIL originally, FIXED and retested PASS**: wrong-org invoice, vendor PO, payment now rejected by DB trigger | DB relationship guards |
+
+**Fix:** New append-only `0013_tenant_link_guards` adds triggers for events, quotations, contracts, purchase_orders, event_costs, invoices, invoice_payments. Applied only to disposable branch, where migration count is now **14**. Main UAT still has 13 and should receive 0013 only after separate review; production untouched.
+
+**Remaining gaps:** authenticated RBAC/IDOR API tests, UI workflows, login activation, actual HTTP idempotency/concurrent payment tests, database restore rehearsal. No full ERP GO sign-off. Test fixture kept on disposable branch for repeatability; branch may be deleted after owner authorization.
