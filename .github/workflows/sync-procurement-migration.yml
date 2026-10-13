@@ -1,4 +1,4 @@
-name: Generate Procurement Migration
+name: Generate Procurement Migration (PR08)
 on:
   push:
     branches: ['feature/08-vendor-procurement']
