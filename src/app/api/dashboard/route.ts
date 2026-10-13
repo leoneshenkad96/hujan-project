@@ -1,7 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {and,eq,sql} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
-import {events,tasks,leads,invoices,eventCosts,purchaseOrders} from '@/db/schema';
+import {events,leads} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
 import {can} from '@/lib/permissions';
 import {uuid} from '@/lib/budget-validation';
@@ -15,8 +15,7 @@ export async function GET(req:NextRequest){
   const db=getDatabase();
   const eventFilter=and(eq(events.organizationId,org),raw?eq(events.id,raw):undefined);
   if(raw){const [found]=await db.select({id:events.id}).from(events).where(eventFilter).limit(1);if(!found)return fail('Event not found',404)}
-  const portfolio=await db.select({id:events.id,title:events.title,eventDate:events.eventDate,progress:events.progress,status:events.status,contractValue:events.contractValue,approvedBudget:events.approvedBudget}).from(events).where(eventFilter).orderBy(events.eventDate,events.id).limit(200);
-  const ids=portfolio.map(e=>e.id);
+  const portfolio=await db.select({id:events.id,title:events.title,eventDate:events.eventDate,progress:events.progress,status:events.status}).from(events).where(eventFilter).orderBy(events.eventDate,events.id).limit(200);
   const scoped=raw?sql` AND event_id=${raw}::uuid`:sql``;
   const [taskStats,leadStats]=await Promise.all([
    db.execute(sql`SELECT count(*)::int as total, count(*) FILTER (WHERE status='done')::int as done, count(*) FILTER (WHERE status='blocked')::int as blocked FROM event_tasks WHERE organization_id=${org}::uuid ${scoped}`),
