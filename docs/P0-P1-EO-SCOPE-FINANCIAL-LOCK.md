@@ -51,3 +51,17 @@ Vinca operates a **service-company ERP** for client-commissioned weddings, reuni
 
 ## Release gate
 A passing CI means source checks pass; it does NOT establish real transaction correctness, production readiness, or a successful deployment. Maintain separate status for `implemented`, `CI passed`, `UAT passed`, and `released`. 
+
+
+## P1 quotation implementation checkpoint — 2026-10-13
+- [x] New quote stores an itemized breakdown (description, unit, quantity, unit price, rounded line subtotal), discount amount, explicitly entered tax rate, revision number, predecessor quote ID; previous total-only quotes remain supported.
+- [x] API recomputes quote amount server-side with exact integer-minor-unit calculation; never trusts a browser-submitted `amount` when lines are provided.
+- [x] Interactive quotation form supports adding/removing items, units, qty, unit price, discount, tax rate and live summary.
+- [x] Revision API creates a new draft record rather than modifying the existing quote; it refuses revisions of sent/accepted quotations. Contract creation still requires an accepted quotation and snapshots its amount.
+- [x] Drizzle migration `0010_quotation_line_items` and corresponding schema snapshot authored on the integration branch.
+- [x] Source checks for server calculations, tenant filters, immutable revision and contract amount relation added.
+- [ ] Apply migration only to **isolated Neon UAT** after canonical migration CI passes and explicit scope/backup decision; until then UAT table does NOT have the new columns and new app code must not be pointed at that database.
+- [ ] Prove runtime create/list/revision/contract, report consistency and UI responsiveness using an authenticated isolated UAT app.
+- [ ] Full granular versioned approvals, quote PDF export, PO-to-expense matching and forecast RAB are separate P1 work, not certified as completed here.
+
+**Accounting boundary:** Quotation total is a commercial selling price; approved RAB is a project budget (expected cost), PO commitment and actual expense are separate. Creating or approving a quote must not automatically count its amount as direct expense or overwrite approved RAB. Applicable tax configuration is operator-entered, not inferred from Indonesian tax law.
