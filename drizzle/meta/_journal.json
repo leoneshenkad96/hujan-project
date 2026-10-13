@@ -50,6 +50,13 @@
       "when": 1791885312236,
       "tag": "0006_broken_vector",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791888804125,
+      "tag": "0007_certain_jasper_sitwell",
+      "breakpoints": true
     }
   ]
 }
