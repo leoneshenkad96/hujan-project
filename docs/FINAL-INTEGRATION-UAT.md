@@ -130,3 +130,19 @@ No production configuration or database was changed by these diagnostics.
 - [ ] Complete multi-tenant, finance and backup UAT before production.
 
 This checkpoint replaces the old email-activation workflow: **Resend is not required to log in.** No default password, public registration endpoint, plaintext credential, database write, PR merge or production deployment was made by the login changes.
+
+
+## P0 latest security review and release boundary (2026-10-13)
+
+- [x] Secure admin user management API and Vinca-themed user screen committed; sidebar opens protected `/users`.
+- [x] Updated legacy activation regression test to reflect retired Resend endpoints.
+- [x] User profile update and session revocation use one PostgreSQL statement; the code-level regression test checks that guard.
+- [x] Removed misleading `Demo Administrator` identity and demo-reset control from main workspace.
+- [ ] Remaining demo-only React state and fallback widgets must be removed or isolated before using real events. Some modules currently use live API; do not assert all modules are persistence-safe without browser UAT.
+- [ ] Initial Owner account is not provisioned; trusted operator must set a unique strong password using UAT-only Neon connection, verify role and active flag, and never commit/log credentials.
+- [ ] Enforce database-level **global normalized email uniqueness**, or add a proper tenant-aware identity selector. App-only duplicate checks are not concurrency-safe across organizations.
+- [ ] Validate account administration in running UAT: role escalation/denial, inactive accounts, replay sessions, duplicate email and concurrent edits, audit trail.
+- [ ] Run two-organization IDOR UAT, event workflow and finance concurrent payment tests on disposable fixtures.
+- [ ] Verify migration and restore readiness before production GO.
+
+**Scope:** GitHub integration branch only; no Vercel calls, Neon writes, main merge or production deploy. CI for these recent edits must be checked separately. Current UAT readiness: **NO-GO**.
