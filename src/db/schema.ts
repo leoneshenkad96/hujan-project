@@ -143,3 +143,17 @@ export const authLoginLimits = pgTable('auth_login_limits',{
  attempts:integer('attempts').notNull().default(0),
  updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow()
 });
+
+export const purchaseOrderStatus=pgEnum('purchase_order_status',['draft','issued','partially_received','received','cancelled']);
+export const purchaseOrders=pgTable('purchase_orders',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
+ eventId:uuid('event_id').notNull().references(()=>events.id),
+ vendorId:uuid('vendor_id').notNull().references(()=>vendors.id),
+ number:varchar('number',{length:72}).notNull(),
+ description:varchar('description',{length:240}).notNull(),
+ amount:numeric('amount',{precision:18,scale:2}).notNull(),
+ status:purchaseOrderStatus('status').notNull().default('draft'),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+ updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow()
+},t=>[uniqueIndex('purchase_orders_org_number_idx').on(t.organizationId,t.number),index('purchase_orders_event_idx').on(t.eventId),index('purchase_orders_vendor_idx').on(t.vendorId)]);
