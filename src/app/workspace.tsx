@@ -50,7 +50,7 @@ export default function Workspace({role}:{role:string}){
  const active=events.find(e=>e.id===selected);const contract=events.reduce((n,e)=>n+e.value,0);const planned=events.reduce((n,e)=>n+e.value-e.budget,0);const outstanding=invoices.reduce((n,i)=>n+i.amount-i.paid,0);
  const filtered=useMemo(()=>events.filter(e=>(statusFilter==='all'||e.status===statusFilter)&&[e.name,e.client,e.code].join(' ').toLowerCase().includes(search.toLowerCase())),[events,statusFilter,search]);
  const shown=filtered.slice((pageNo-1)*5,pageNo*5);
- const selectPage=(p:Page)=>{if(!visible(p))return;setPage(p);setOpen(false);setSelected(null);setPageNo(1)};
+ const selectPage=(p:Page)=>{if(!visible(p))return;if(p==='settings'){window.location.assign('/users');return}setPage(p);setOpen(false);setSelected(null);setPageNo(1)};
  function save(form:FormData){
   const required=modal==='event'?'events:write':modal==='task'?'tasks:write':modal==='cost'||modal==='invoice'?'finance:write':null;
   if(required&&!can(role,required)){setNotice('Hak akses tidak cukup untuk aksi tersebut.');setModal(null);return}
