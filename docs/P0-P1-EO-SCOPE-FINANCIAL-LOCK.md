@@ -114,3 +114,12 @@ A passing CI means source checks pass; it does NOT establish real transaction co
 
 ## Tenant guard completion (2026-10-13)
 Migration `0014_tenant_guard_completion` protects the six previously missing relationships: leads/client, tasks/event and assignee, rundown/event and PIC, session/user, audit/actor, and event/project manager. Applied only on disposable branch `br-hidden-snow-b3vbe1y4` (now 15 ledger entries); all eight attempted cross-organization mutations were rejected. Main isolated UAT remains at 13 migrations; production unchanged. This is DB-layer verification, not an authenticated HTTP or full ERP release sign-off.
+
+
+## Main isolated UAT security migration checkpoint — 2026-10-13
+- [x] Applied reviewed migrations `0013_tenant_link_guards` and `0014_tenant_guard_completion` transactionally on branch `br-long-wildflower-b3nsciay` only, after checking branch and previous ledger count. Original data counts for events and costs were zero.
+- [x] Verified 15 Drizzle migration ledger entries and 12 active tenant guard triggers. UAT login-ready users: 0.
+- [x] Updated read-only UAT verification script to expect 15 migrations.
+- [ ] Authenticated multi-role HTTP authorization and Owner login remain unverified; full release remains blocked.
+- [ ] Additional regression probes against new main UAT guards (no mock business fixtures there) remain distinct from successful disposable-branch tests.
+No production database mutation or deployment.
