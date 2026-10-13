@@ -1,4 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
+import { isTrustedOrigin } from '@/lib/security';
 import {randomUUID} from 'node:crypto';
 import {and,eq,desc} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
@@ -14,7 +15,7 @@ export async function GET(){
  }catch{return fail('Contracts unavailable',503)}
 }
 export async function POST(req:NextRequest){
- const origin=req.headers.get('origin');if(origin&&origin!==req.nextUrl.origin)return fail('Origin not allowed',403);
+ if(!isTrustedOrigin(req.headers.get('origin'),req.url,process.env.NODE_ENV==='production'))return fail('Origin not allowed',403);
  try{const a=await requirePermission('clients:write');if(a.error)return fail(a.error,a.error==='unauthorized'?401:403);
  const input=await req.json().catch(()=>null);const quoteId=input&&typeof input==='object'&&!Array.isArray(input)?(input as {quotationId?:unknown}).quotationId:null;
  if(!uuid.test(String(quoteId)))return fail('Invalid quotation ID',400);
