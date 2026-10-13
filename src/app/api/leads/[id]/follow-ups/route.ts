@@ -36,7 +36,7 @@ export async function POST(req:NextRequest,{params}:Context){
   if(!note||note.length>2000)return fail('Invalid note',400);
   let nextContactAt:Date|null=null;
   if(x.nextContactAt!==undefined&&x.nextContactAt!==null&&x.nextContactAt!==''){
-   if(typeof x.nextContactAt!=='string'||!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$/.test(x.nextContactAt))return fail('Invalid next contact date',400);
+   if(typeof x.nextContactAt!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(x.nextContactAt))return fail('Invalid next contact date',400);
    nextContactAt=new Date(x.nextContactAt);
    if(Number.isNaN(nextContactAt.getTime()))return fail('Invalid next contact date',400);
   }
