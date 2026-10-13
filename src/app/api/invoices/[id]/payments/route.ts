@@ -25,10 +25,16 @@ export async function POST(req:NextRequest,{params}:Context){
  const {id}=await params;if(!uuid.test(id))return fail('Invalid invoice ID',400);
  if(!(req.headers.get('content-type')||'').includes('application/json'))return fail('Expected JSON',415);
  const input=paymentInput(await req.json().catch(()=>null));if(!input)return fail('Invalid payment',400);
+ const key=req.headers.get('idempotency-key');
+ if(!key||!/^[a-zA-Z0-9_-]{16,80}$/.test(key))return fail('Valid Idempotency-Key header required',400);
  const org=auth.user.organizationId,db=getDatabase();
+ const findReplay=async()=>{const [existing]=await db.select().from(payments).where(and(eq(payments.organizationId,org),eq(payments.invoiceId,id),eq(payments.idempotencyKey,key))).limit(1);return existing};
+ const replay=await findReplay();
+ if(replay){if(replay.amount!==input.amount&&Number(replay.amount)!==Number(input.amount)||replay.reference!==input.reference)return fail('Idempotency key used with different payment',409);return NextResponse.json({payment:replay,replayed:true},{status:200,headers:{'Cache-Control':'no-store'}})}
  // An UPDATE obtains an invoice row lock and conditionally increments its paid balance.
  // The payment row and audit record are created in the same statement; no overpayment race.
- const result=await db.execute(sql`
+ let result;
+ try{result=await db.execute(sql`
  WITH updated AS (
   UPDATE invoices
   SET paid_amount=paid_amount+${input.amount}::numeric,
@@ -38,10 +44,10 @@ export async function POST(req:NextRequest,{params}:Context){
     AND paid_amount+${input.amount}::numeric<=amount
   RETURNING id,organization_id,paid_amount,amount,status
  ), payment_created AS (
-  INSERT INTO invoice_payments (organization_id,invoice_id,amount,reference)
-  SELECT organization_id,id,${input.amount}::numeric,${input.reference}
+  INSERT INTO invoice_payments (organization_id,invoice_id,amount,reference,idempotency_key)
+  SELECT organization_id,id,${input.amount}::numeric,${input.reference},${key}
   FROM updated
-  RETURNING id,invoice_id,amount,paid_at,reference,organization_id
+  RETURNING id,invoice_id,amount,paid_at,reference,organization_id,idempotency_key
  ), logged AS (
   INSERT INTO audit_logs (organization_id,actor_id,action,resource_type,resource_id,details)
   SELECT p.organization_id,${auth.user.id}::uuid,'invoice.payment_recorded','invoice_payment',p.id,
@@ -53,7 +59,11 @@ export async function POST(req:NextRequest,{params}:Context){
  FROM payment_created p
  JOIN updated u ON u.id=p.invoice_id
  JOIN logged l ON true
- `);
+ `)}catch(error){
+  const original=await findReplay();
+  if(original){if(original.amount!==input.amount&&Number(original.amount)!==Number(input.amount)||original.reference!==input.reference)return fail('Idempotency key used with different payment',409);return NextResponse.json({payment:original,replayed:true},{status:200,headers:{'Cache-Control':'no-store'}})}
+  throw error;
+ }
  const payment=result.rows[0];
  if(!payment)return fail('Invoice is not issued, already paid, or payment exceeds outstanding balance',409);
  return NextResponse.json({payment},{status:201,headers:{'Cache-Control':'no-store'}});
