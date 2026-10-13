@@ -91,6 +91,7 @@ export const invoices = pgTable('invoices',{
  eventId:uuid('event_id').notNull().references(()=>events.id),
  number:varchar('number',{length:60}).notNull(),
  amount:numeric('amount',{precision:18,scale:2}).notNull(),
+ paidAmount:numeric('paid_amount',{precision:18,scale:2}).notNull().default('0'),
  status:invoiceStatus('status').notNull().default('draft'),
  dueDate:date('due_date'),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
