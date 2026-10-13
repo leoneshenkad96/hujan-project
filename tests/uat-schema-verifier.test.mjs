@@ -13,5 +13,5 @@ test('UAT verifier is explicitly scoped and read only',()=>{
 });
 test('migration ledger and normalized index status must agree',()=>{
  assert.match(src,/normalizedEmailDuplicates/);
- assert.match(src,/applied!==10\|\|!hasIndex/);
+ assert.match(src,/applied!==13\|\|!hasIndex/);
 });
