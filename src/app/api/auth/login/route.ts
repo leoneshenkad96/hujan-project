@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isTrustedOrigin } from '@/lib/security';
 import { and, eq } from 'drizzle-orm';
 import { getDatabase } from '@/db/client';
 import { organizations, users } from '@/db/schema';
@@ -10,8 +11,7 @@ export const dynamic='force-dynamic';
 export async function POST(request:NextRequest){
  const type=request.headers.get('content-type')||'';
  if(!type.includes('application/json'))return NextResponse.json({error:'Expected JSON'},{status:415});
- const origin=request.headers.get('origin');
- if(origin&&origin!==request.nextUrl.origin)return NextResponse.json({error:'Origin not allowed'},{status:403});
+ if(!isTrustedOrigin(request.headers.get('origin'),request.url,process.env.NODE_ENV==='production'))return NextResponse.json({error:'Origin not allowed'},{status:403});
  let input:unknown;
  try{input=await request.json()}catch{return NextResponse.json({error:'Invalid JSON'},{status:400})}
  if(!input||typeof input!=='object')return NextResponse.json({error:'Invalid input'},{status:400});
