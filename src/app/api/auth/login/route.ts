@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isTrustedOrigin } from '@/lib/security';
-import { eq } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { getDatabase } from '@/db/client';
 import { users } from '@/db/schema';
 import { newSession } from '@/lib/auth';
@@ -28,7 +28,7 @@ export async function POST(request:NextRequest){
   // Email-only login MUST fail closed for duplicate active identities across tenants.
   // An administrator must resolve duplicates before this login method can be used.
   const rows=await db.select({id:users.id,organizationId:users.organizationId,email:users.email,name:users.name,role:users.role,hash:users.passwordHash,active:users.active})
-   .from(users).where(eq(users.email,normalizedEmail)).limit(2);
+   .from(users).where(sql`lower(trim(${users.email})) = ${normalizedEmail}`).limit(2);
   const found=rows.length===1?rows[0]:null;
   const valid=await verifyPassword(password,found?.hash??null);
   if(!found||!valid)return NextResponse.json({error:'Invalid credentials'},{status:401,headers:{'Cache-Control':'no-store'}});
