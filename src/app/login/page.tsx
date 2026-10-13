@@ -7,7 +7,11 @@ export default function Login(){
  e.preventDefault();setBusy(true);setError('');
  const fd=new FormData(e.currentTarget);
  try{const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:fd.get('email'),password:fd.get('password')})});
- if(!res.ok){setError('Login gagal. Periksa email dan password atau hubungi administrator.');return}
+ if(!res.ok){
+  if(res.status===429){const retry=Number(res.headers.get('Retry-After'));const minutes=Number.isFinite(retry)&&retry>0?Math.ceil(retry/60):null;setError(minutes?`Terlalu banyak percobaan login. Coba lagi setelah sekitar ${minutes} menit.`:'Terlalu banyak percobaan login. Coba lagi nanti.');return}
+  if(res.status===503){setError('Layanan login sedang tidak tersedia. Coba kembali nanti.');return}
+  setError('Login gagal. Periksa email dan password atau hubungi administrator.');return
+ }
  router.push('/');router.refresh();
  }catch{setError('Tidak dapat menghubungi server.')}finally{setBusy(false)}
  }
@@ -17,6 +21,6 @@ export default function Login(){
  <label htmlFor="login-email">Email<input id="login-email" required name="email" type="email" autoComplete="username" autoCapitalize="none" autoCorrect="off" style={field}/></label>
  <label htmlFor="login-password">Password<input id="login-password" required name="password" type="password" autoComplete="current-password" style={field}/></label>
  {error&&<p role="alert" style={{color:'#b42355'}}>{error}</p>}
- <button disabled={busy} type="submit" style={{background:'#d64d89',color:'white',border:0,padding:13,borderRadius:9,fontWeight:700,cursor:'pointer'}}>{busy?'Memproses...':'Masuk'}</button>
+ <button disabled={busy} type="submit" style={{background:'#d64d89',color:'white',border:0,padding:13,borderRadius:9,fontWeight:700,cursor:busy?'not-allowed':'pointer',opacity:busy?.6:1}}>{busy?'Memproses...':'Masuk'}</button>
  <small style={{color:'#8c8798'}}>Akun dikelola oleh administrator. Hubungi administrator untuk akses.</small></form></main>;
 }
