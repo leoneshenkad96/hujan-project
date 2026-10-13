@@ -42,6 +42,7 @@ export const leads = pgTable('leads',{
 },t=>[index('leads_org_idx').on(t.organizationId)]);
 export const events = pgTable('events',{
  id:uuid('id').primaryKey().defaultRandom(),
+ leadId:uuid('lead_id').references(()=>leads.id),
  organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
  clientId:uuid('client_id').notNull().references(()=>clients.id),
  code:varchar('code',{length:40}).notNull(),
@@ -56,7 +57,7 @@ export const events = pgTable('events',{
  projectManagerId:uuid('project_manager_id').references(()=>users.id),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
  updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow()
-},t=>[uniqueIndex('events_org_code_idx').on(t.organizationId,t.code),index('events_org_date_idx').on(t.organizationId,t.eventDate)]);
+},t=>[uniqueIndex('events_org_code_idx').on(t.organizationId,t.code),uniqueIndex('events_lead_unique_idx').on(t.leadId),index('events_org_date_idx').on(t.organizationId,t.eventDate)]);
 export const tasks = pgTable('event_tasks',{
  id:uuid('id').primaryKey().defaultRandom(),
  organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
