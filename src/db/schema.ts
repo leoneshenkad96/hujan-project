@@ -221,3 +221,13 @@ export const activationTokens=pgTable('auth_activation_tokens',{
  consumedAt:timestamp('consumed_at',{withTimezone:true}),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
 },t=>[index('activation_tokens_user_idx').on(t.userId),index('activation_tokens_expiry_idx').on(t.expiresAt)]);
+
+export const leadFollowUps=pgTable('lead_follow_ups',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
+ leadId:uuid('lead_id').notNull().references(()=>leads.id),
+ actorId:uuid('actor_id').notNull().references(()=>users.id),
+ note:text('note').notNull(),
+ nextContactAt:timestamp('next_contact_at',{withTimezone:true}),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
+},t=>[index('lead_follow_ups_lead_created_idx').on(t.leadId,t.createdAt),index('lead_follow_ups_org_idx').on(t.organizationId)]);
