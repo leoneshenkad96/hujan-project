@@ -20,7 +20,7 @@ export async function GET(request:NextRequest){
    db.select({id:invoices.id,amount:invoices.amount,status:invoices.status}).from(invoices).where(and(eq(invoices.eventId,eventId),eq(invoices.organizationId,org))),
    db.select({amount:purchaseOrders.amount,status:purchaseOrders.status}).from(purchaseOrders).where(and(eq(purchaseOrders.eventId,eventId),eq(purchaseOrders.organizationId,org),ne(purchaseOrders.status,'cancelled')))
   ]);
-  const invoiceIds=invoiceRows.filter(x=>x.status!=='voided').map(x=>x.id);
+  const invoiceIds=invoiceRows.filter(x=>x.status!=='draft'&&x.status!=='voided').map(x=>x.id);
   const paymentRows=invoiceIds.length?await db.select({amount:payments.amount,invoiceId:payments.invoiceId}).from(payments).where(and(eq(payments.organizationId,org),inArray(payments.invoiceId,invoiceIds))):[]; 
   const invoiceSet=new Set(invoiceIds);
   const summary=profitability({
