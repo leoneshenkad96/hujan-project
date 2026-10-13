@@ -1,5 +1,5 @@
 import { pgTable, pgEnum, uuid, varchar, text, integer, numeric, timestamp, date, uniqueIndex, index, boolean } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 export const eventStatus = pgEnum('event_status', ['planning','confirmed','pre_production','live','completed','cancelled']);
 export const taskStatus = pgEnum('task_status', ['todo','in_progress','done','blocked']);
@@ -22,7 +22,7 @@ export const users = pgTable('users',{
  role:varchar('role',{length:40}).notNull().default('crew'),
  active:boolean('active').notNull().default(true),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
-},t=>[uniqueIndex('users_org_email_idx').on(t.organizationId,t.email)]);
+},t=>[uniqueIndex('users_org_email_idx').on(t.organizationId,t.email),uniqueIndex('users_email_global_normalized_idx').on(sql`lower(trim(${t.email}))`]);
 export const clients = pgTable('clients',{
  id:uuid('id').primaryKey().defaultRandom(),
  organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
