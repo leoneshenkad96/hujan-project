@@ -110,3 +110,7 @@ A passing CI means source checks pass; it does NOT establish real transaction co
 **Fix:** New append-only `0013_tenant_link_guards` adds triggers for events, quotations, contracts, purchase_orders, event_costs, invoices, invoice_payments. Applied only to disposable branch, where migration count is now **14**. Main UAT still has 13 and should receive 0013 only after separate review; production untouched.
 
 **Remaining gaps:** authenticated RBAC/IDOR API tests, UI workflows, login activation, actual HTTP idempotency/concurrent payment tests, database restore rehearsal. No full ERP GO sign-off. Test fixture kept on disposable branch for repeatability; branch may be deleted after owner authorization.
+
+
+## Tenant guard completion (2026-10-13)
+Migration `0014_tenant_guard_completion` protects the six previously missing relationships: leads/client, tasks/event and assignee, rundown/event and PIC, session/user, audit/actor, and event/project manager. Applied only on disposable branch `br-hidden-snow-b3vbe1y4` (now 15 ledger entries); all eight attempted cross-organization mutations were rejected. Main isolated UAT remains at 13 migrations; production unchanged. This is DB-layer verification, not an authenticated HTTP or full ERP release sign-off.
