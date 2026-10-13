@@ -1,4 +1,10 @@
-import {minorUnits,formatMinor} from './budget-validation.ts';
+const minorUnits=(v:string):bigint=>{
+ if(!/^\\d{1,16}(?:\\.\\d{1,2})?$/.test(v))throw Error('Invalid cost decimal');
+ const [whole,fraction='']=v.split('.');
+ return BigInt(whole)*100n+BigInt((fraction+'00').slice(0,2));
+};
+const formatMinor=(v:bigint):string=>`${v<0n?'-':''}${(v<0n?-v:v)/100n}.${((v<0n?-v:v)%100n).toString().padStart(2,'0')}`;
+
 
 /** Financial LOCK: a PO amount is NOT a remaining commitment until its fulfilled
  * share is explicitly matched to actual expense records. Never infer matches
