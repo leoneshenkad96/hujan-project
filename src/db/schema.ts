@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, varchar, text, integer, numeric, timestamp, date, uniqueIndex, index, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, varchar, text, integer, numeric, timestamp, date, uniqueIndex, index, boolean, jsonb } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
 export const eventStatus = pgEnum('event_status', ['planning','confirmed','pre_production','live','completed','cancelled']);
@@ -186,6 +186,11 @@ export const quotations=pgTable('quotations',{
  number:varchar('number',{length:72}).notNull(),
  title:varchar('title',{length:200}).notNull(),
  amount:numeric('amount',{precision:18,scale:2}).notNull(),
+ lineItems:jsonb('line_items').$type<{description:string;quantity:string;unitPrice:string;subtotal:string}[]>(),
+ discountAmount:numeric('discount_amount',{precision:18,scale:2}).notNull().default('0'),
+ taxRatePercent:numeric('tax_rate_percent',{precision:5,scale:2}).notNull().default('0'),
+ revision:integer('revision').notNull().default(1),
+ previousQuotationId:uuid('previous_quotation_id'),
  notes:text('notes'),
  status:quotationStatus('status').notNull().default('draft'),
  validUntil:date('valid_until'),
