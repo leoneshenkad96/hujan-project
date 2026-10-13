@@ -160,3 +160,15 @@ This checkpoint replaces the old email-activation workflow: **Resend is not requ
 - [ ] Complete login, tenant isolation, event, finance and restore UAT before production sign-off.
 
 No Neon SQL writes, Vercel operations, production schema or main branch changes were performed for this checkpoint.
+
+
+### Verified UAT migration state — 2026-10-13 (supersedes earlier preflight)
+- [x] Neon project `fancy-cell-64250119`, explicit isolated branch `br-long-wildflower-b3nsciay`.
+- [x] Read-only SQL confirms `drizzle.__drizzle_migrations` has **10 rows**.
+- [x] Read-only SQL confirms index `users_email_global_normalized_idx` is present.
+- [x] Read-only SQL confirms **1** `vinca-uat` Owner and **0** active Owner accounts with password hashes.
+- [ ] First Owner must be activated through a trusted interactive UAT terminal and correct UAT-only Neon connection. No password is sent via chat, repository, PR or logs.
+- [ ] Confirm UAT database branch identity before running `scripts/bootstrap-uat-owner.mjs`; environment variable `VINCA_BOOTSTRAP_BRANCH` alone does not prove which branch `DATABASE_URL` targets.
+- [ ] Runtime login, session invalidation, 2-tenant isolation, financial write concurrency and restore drills remain mandatory.
+
+**Migration `0009_email_global_unique` is applied on UAT; do not run it a second time.** Prior checklist entries describing 9 migrations or an absent index are historical preflight observations, not current state.
