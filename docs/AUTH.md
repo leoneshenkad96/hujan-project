@@ -22,11 +22,18 @@ Do not paste credentials or password hashes in issues, pull requests, logs, or c
 No account has been provisioned during PR #04.
 
 ## Pending gates
-- Migration for `auth_sessions` must be generated, reviewed and tested on Neon development before session endpoints can work.
-- Login rate limiting and brute-force protection must be installed before any public authentication endpoint or production release.
+- Both `auth_sessions` and `auth_login_limits` migrations are generated and applied to Neon development. No initial owner has been provisioned.
+- Login rate limiting is implemented using atomic PostgreSQL counters keyed by hashed IP and organization+email, 8 requests per 15-minute window. Migration `0002_known_smiling_tiger` has been applied to the **development** branch only. These controls still require adversarial integration tests before public release.
 - Review session lifecycle: expiration, revocation, organization membership, and privilege changes.
 - Roles are enforced in API/service layers; hidden UI alone is not authorization.
 - Do not run auth migrations in production or add a default admin password.
 
 ## Planned roles
 owner, admin, project_manager, sales, finance, production, crew.
+
+## Verified engineering checks
+- GitHub Actions includes TypeScript, lint, Next.js build, Drizzle schema check, and node-based RBAC unit tests.
+- Database development migration ledger contains 3 entries, verified with SQL.
+- Direct live login/invalid-login, 401/403, session revocation and browser tests remain pending; GitHub CI alone does not establish release readiness.
+- Proxy-provided IP headers may depend on hosting trust boundaries; account-key limiting still enforces per-account throttling. Before production, validate trusted proxy configuration.
+- Do not assume UI-only demo buttons are protected transaction endpoints. All future real write APIs must call `requirePermission` and derive `organizationId` from the active session.
