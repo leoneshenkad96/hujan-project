@@ -2,7 +2,6 @@
 import {useCallback,useEffect,useState} from 'react';
 type Item={id:string;title:string;status:string};
 type Result={items:Item[];hasMore?:boolean};
-const stages:Record<string,string[]>={planning:['confirmed','cancelled'],confirmed:['pre_production','cancelled'],pre_production:['live','cancelled'],live:['completed','cancelled'],completed:[],cancelled:[]};
 async function problem(r:Response){const j=await r.json().catch(()=>null);return typeof j?.error==='string'?j.error:'Permintaan gagal'}
 export default function EventClosing({eventId,status,canWrite,onUpdated}:{eventId:string;status:string;canWrite:boolean;onUpdated:()=>Promise<void>}){
  const [tasks,setTasks]=useState<Item[]>([]),[cues,setCues]=useState<Item[]>([]);
