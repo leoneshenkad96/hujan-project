@@ -28,6 +28,15 @@ try{
  const db=neon(uri);
  const scope=await db`SELECT current_setting('neon.project_id',true) AS project_id,current_setting('neon.branch_id',true) AS branch_id,current_database() AS database_name`;
  if(scope.length!==1||scope[0].project_id!=='fancy-cell-64250119'||scope[0].branch_id!=='br-long-wildflower-b3nsciay'||scope[0].database_name!=='eventorganizer')throw Error('Connection is not the expected isolated Vinca UAT database');
+ // Never request or handle a password until the target database is migration-ready.
+ const ready=await db`SELECT
+  (SELECT count(*)::int FROM drizzle.__drizzle_migrations) AS migration_count,
+  to_regclass('public.lead_follow_ups') IS NOT NULL AS has_followups,
+  to_regclass('public.crew_assignments') IS NOT NULL AS has_crew,
+  (SELECT count(*)::int FROM information_schema.columns WHERE table_schema='public' AND table_name='events' AND column_name='lead_id') AS lead_columns,
+  (SELECT count(*)::int FROM pg_trigger WHERE NOT tgisinternal AND tgname IN ('lead_follow_ups_tenant_guard','crew_assignments_guard','events_origin_guard')) AS guard_triggers`;
+ if(ready.length!==1||Number(ready[0].migration_count)!==18||!ready[0].has_followups||!ready[0].has_crew||Number(ready[0].lead_columns)!==1||Number(ready[0].guard_triggers)!==3)
+  throw Error('UAT migrations 0015-0017 are not verified; refusing Owner activation');
  const password=await readSecret();
  if(password.length<12||password.length>256)throw Error('Password length invalid');
  const confirmation=await readSecret('Confirm Owner password (hidden): ');
