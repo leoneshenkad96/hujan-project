@@ -9,10 +9,22 @@ export default function EventClosing({eventId,status,canWrite,onUpdated}:{eventI
  const refresh=useCallback(async()=>{
   setLoading(true);setError('');
   try{
-   const [t,c]=await Promise.all([fetch('/api/tasks?eventId='+encodeURIComponent(eventId)+'&limit=100',{cache:'no-store'}),fetch('/api/rundown?eventId='+encodeURIComponent(eventId),{cache:'no-store'})]);
-   if(!t.ok||!c.ok)throw new Error(await problem(!t.ok?t:c));
-   const taskData=await t.json() as Result, cueData=await c.json() as Result;
-   if(taskData.hasMore)throw new Error('Task lebih dari 100. Selesaikan atau periksa semua halaman sebelum closing.');
+   const eventQuery=encodeURIComponent(eventId);
+   const loadTasks=async()=>{
+    const all:Item[]=[];
+    for(let page=1;page<=10000;page++){
+     const response=await fetch('/api/tasks?eventId='+eventQuery+'&limit=100&page='+page,{cache:'no-store'});
+     if(!response.ok)throw new Error(await problem(response));
+     const data=await response.json() as Result;
+     all.push(...data.items);
+     if(!data.hasMore)return all;
+    }
+    throw new Error('Terlalu banyak halaman Task untuk diverifikasi.');
+   };
+   const [allTasks,c]=await Promise.all([loadTasks(),fetch('/api/rundown?eventId='+eventQuery,{cache:'no-store'})]);
+   if(!c.ok)throw new Error(await problem(c));
+   const cueData=await c.json() as Result;
+   const taskData={items:allTasks};
    setTasks(taskData.items);setCues(cueData.items);
   }catch(e){setError(e instanceof Error?e.message:'Checklist tidak dapat dimuat')}finally{setLoading(false)}
  },[eventId]);
