@@ -36,6 +36,18 @@ const [cookieA,cookieB]=await Promise.all([
  login(e.UAT_USERNAME_A,e.UAT_PASSWORD_A),
  login(e.UAT_USERNAME_B,e.UAT_PASSWORD_B)
 ]);
+const [listA,listB]=await Promise.all([
+ fetchApi('/api/invoices?limit=100',{headers:{cookie:cookieA}}),
+ fetchApi('/api/invoices?limit=100',{headers:{cookie:cookieB}})
+]);
+assert.equal(listA.status,200,'Org A must be able to list its invoice fixtures');
+assert.equal(listB.status,200,'Org B must be able to list its invoice fixtures');
+const [dataA,dataB]=await Promise.all([listA.json(),listB.json()]);
+assert.ok(dataA.items.some(x=>x.id===e.UAT_INVOICE_A&&x.organizationId===e.UAT_ORG_A),'Invoice A must belong to Org A');
+assert.ok(dataB.items.some(x=>x.id===e.UAT_INVOICE_B&&x.organizationId===e.UAT_ORG_B),'Invoice B must belong to Org B');
+assert.ok(!dataB.items.some(x=>x.id===e.UAT_INVOICE_A),'Org B invoice list must not expose Org A invoice');
+assert.ok(!dataA.items.some(x=>x.id===e.UAT_INVOICE_B),'Org A invoice list must not expose Org B invoice');
+console.log('PASS both authenticated accounts see only their own invoice fixtures');
 const paymentPath='/api/invoices/'+e.UAT_INVOICE_A+'/payments';
 const cross=await fetchApi(paymentPath,{headers:{cookie:cookieB}});
 assert.equal(cross.status,404,'Org B must not read Org A payment ledger');

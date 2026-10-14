@@ -4,7 +4,10 @@
 import { emitKeypressEvents } from 'node:readline';
 import { stdin, stdout, stderr } from 'node:process';
 import { randomBytes, scryptSync } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { neon } from '@neondatabase/serverless';
+const migrationJournal=JSON.parse(readFileSync(new URL('../drizzle/meta/_journal.json',import.meta.url),'utf8'));
+const expectedMigrationCount=migrationJournal.entries.length;
 const uri=process.env.DATABASE_URL;
 const branch=process.env.VINCA_BOOTSTRAP_BRANCH;
 if(process.env.VINCA_BOOTSTRAP_ACK!=='ISOLATED_UAT_ONLY'||branch!=='br-long-wildflower-b3nsciay'||!uri){
@@ -31,12 +34,14 @@ try{
  // Never request or handle a password until the target database is migration-ready.
  const ready=await db`SELECT
   (SELECT count(*)::int FROM drizzle.__drizzle_migrations) AS migration_count,
+  to_regclass('public.users_username_global_normalized_idx') IS NOT NULL AS has_username_index,
+  (SELECT count(*)::int FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='username') AS username_columns,
   to_regclass('public.lead_follow_ups') IS NOT NULL AS has_followups,
   to_regclass('public.crew_assignments') IS NOT NULL AS has_crew,
   (SELECT count(*)::int FROM information_schema.columns WHERE table_schema='public' AND table_name='events' AND column_name='lead_id') AS lead_columns,
   (SELECT count(*)::int FROM pg_trigger WHERE NOT tgisinternal AND tgname IN ('lead_follow_ups_tenant_guard','crew_assignments_guard','events_origin_guard')) AS guard_triggers`;
- if(ready.length!==1||Number(ready[0].migration_count)!==18||!ready[0].has_followups||!ready[0].has_crew||Number(ready[0].lead_columns)!==1||Number(ready[0].guard_triggers)!==3)
-  throw Error('UAT migrations 0015-0017 are not verified; refusing Owner activation');
+ if(ready.length!==1||Number(ready[0].migration_count)!==expectedMigrationCount||!ready[0].has_username_index||Number(ready[0].username_columns)!==1||!ready[0].has_followups||!ready[0].has_crew||Number(ready[0].lead_columns)!==1||Number(ready[0].guard_triggers)!==3)
+  throw Error('UAT schema is not at the checked-in migration version; refusing Owner activation');
  const password=await readSecret();
  if(password.length<12||password.length>256)throw Error('Password length invalid');
  const confirmation=await readSecret('Confirm Owner password (hidden): ');

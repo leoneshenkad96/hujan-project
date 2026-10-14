@@ -1,7 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import {and,eq} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
-import {events,invoices} from '@/db/schema';
+import {events} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
 import {uuid} from '@/lib/invoice-validation';
 export const runtime='nodejs';

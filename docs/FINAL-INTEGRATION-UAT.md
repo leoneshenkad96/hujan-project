@@ -185,3 +185,26 @@ No Neon SQL writes, Vercel operations, production schema or main branch changes 
 - [ ] Verify the latest CI workflow for the added audit script and tests before marking the commit green.
 
 No Vercel, main branch merge, production database write or creation of test fixtures took place.
+
+
+## Current checkpoint — 2026-10-14 (supersedes earlier live-data counts above)
+
+### Read-only UAT verification
+- Neon project `fancy-cell-64250119`, UAT branch `br-long-wildflower-b3nsciay`, database `eventorganizer` was identity-checked before querying.
+- UAT schema ledger contains **19 migrations**, matching `drizzle/meta/_journal.json`; the global normalized-email index is present, normalized email duplicates are zero, and exactly one UAT Owner exists.
+- UAT contains **2 organizations, 8 active users, 8 events, 4 invoices and 4 payments**. Three named accounts (`leoneshenkad`, `uat_finance_a`, `uat_finance_b`) are active and have password hashes; passwords were not read.
+- Read-only integrity audit: zero orphan users, tenant-link mismatches, invalid invoice balances, invalid payment amounts, or invoice/payment reconciliation mismatches.
+- Disposable child clone `br-green-pine-b39zmics` was independently identity-checked. It has the same baseline counts and zero invoice/payment reconciliation mismatches; it expires **2026-10-17 00:00 UTC**. No finance writes have been run on the clone.
+
+### Local review repairs (not yet pushed)
+- Owner setup endpoint now verifies the exact Neon project, branch and database before rate-limit writes or account changes.
+- Interactive Owner bootstrap now compares the applied migration count to the checked-in journal and confirms the username column/index before it asks for a password; it no longer relies on a stale fixed count.
+- UAT schema verifier derives its expected migration count from the checked-in Drizzle journal instead of a stale hardcoded value.
+- Finance concurrency harness verifies both invoice fixtures belong to the expected tenant and neither tenant's invoice list exposes the other tenant's invoice before attempting writes.
+- Local verification after these changes: **143/143 tests pass**, TypeScript and Drizzle checks pass, release preflight passes, ESLint has no errors (one warning in the local ESLint config), and `npm audit --omit=dev --audit-level=high` reports zero vulnerabilities.
+
+### Still not release-approved
+- No authenticated HTTP or payment-concurrency writes have been run against the disposable child; this requires the application runtime to target that child and credentials entered privately.
+- Browser business-flow/accessibility walkthrough and disposable restore drill remain outstanding.
+- PRs #1–#17 currently have no submitted reviews; PR #17 remains Draft and based on `feature/16-release-readiness`. The GitHub status context `Vercel` is failing on PRs #4–#16; no Vercel inspection or configuration change was performed in this checkpoint.
+- These local repairs are not yet on the GitHub PR head, so they have no corresponding CI run or review. Re-run CI and obtain required human review before the stacked merge sequence. Production migration/deploy remain out of scope until the release gates and owner approvals are complete.

@@ -21,3 +21,10 @@ test('concurrency UAT verifies two writes with same key only record one row',()=
  assert.match(harness,/cross\.status,404/);
  assert.match(harness,/crossWrite\.status,409/);
 });
+test('concurrency UAT proves fixture ownership and invoice-list isolation before writing',()=>{
+ assert.match(harness,/x\.id===e\.UAT_INVOICE_A&&x\.organizationId===e\.UAT_ORG_A/);
+ assert.match(harness,/x\.id===e\.UAT_INVOICE_B&&x\.organizationId===e\.UAT_ORG_B/);
+ assert.match(harness,/!dataB\.items\.some\(x=>x\.id===e\.UAT_INVOICE_A\)/);
+ assert.match(harness,/!dataA\.items\.some\(x=>x\.id===e\.UAT_INVOICE_B\)/);
+ assert.ok(harness.indexOf('both authenticated accounts see only their own invoice fixtures')<harness.indexOf('const paymentPath='));
+});

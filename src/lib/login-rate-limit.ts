@@ -6,7 +6,6 @@ import { getDatabase } from '@/db/client';
 // One atomic UPSERT prevents a multi-instance race between failed logins.
 // Hash two independent keys so attacks are bounded both by source and account.
 const MAX_ATTEMPTS = 8;
-const WINDOW_SECONDS = 15 * 60;
 export function loginKeys(ip: string, organization: string, email: string) {
  const hash=(value:string)=>createHash('sha256').update(value).digest('hex');
  return [
