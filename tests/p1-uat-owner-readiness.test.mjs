@@ -23,6 +23,7 @@ test('Preview Owner setup verifies the exact Neon target before any database wri
  assert.match(source,/EXPECTED_DATABASE = 'eventorganizer'/);
  assert.match(source,/current_setting\('neon\.project_id',true\)/);
  assert.match(source,/current_setting\('neon\.branch_id',true\)/);
+ assert.ok(source.indexOf('timingSafeEqual(digest(body.setupCode),digest(expected))')<source.indexOf('const scope=await db.execute'));
  assert.ok(source.indexOf('const scope=await db.execute')<source.indexOf('enforceLoginRateLimit('));
  assert.ok(source.indexOf('EXPECTED_NEON_BRANCH')<source.indexOf('enforceLoginRateLimit('));
  assert.ok(source.indexOf('enforceLoginRateLimit(')<source.indexOf('db.update(users)'));
