@@ -56,15 +56,16 @@ Buat `.env.local` sendiri (jangan di-commit). Minimal `DATABASE_URL` harus menun
 
 ## Login Owner UAT (tanpa Resend)
 
-Login mengikuti pola ERP Kasapink: **email + password**, bukan tautan email/OTP/Resend. Halaman `/login` mengirim kredensial ke `POST /api/auth/login`; autentikasi menggunakan password `scrypt`, sesi cookie `HttpOnly`, rate limiting, dan RBAC. Endpoint permintaan aktivasi email sudah dinonaktifkan (HTTP 410), sedangkan `/activate` mengarah ke `/login`.
+Login mengikuti pola ERP Kasapink: **username + password**, bukan tautan email/OTP/Resend. Halaman `/login` mengirim kredensial ke `POST /api/auth/login`; autentikasi menggunakan password `scrypt`, sesi cookie `HttpOnly`, rate limiting, dan RBAC. Endpoint permintaan aktivasi email sudah dinonaktifkan (HTTP 410), sedangkan `/activate` mengarah ke `/login`.
 
 - **Organisasi UAT:** `vinca-uat`
-- **Email Owner:** `leoneshenkad@gmail.com`
+- **Username Owner UAT:** `leoneshenkad` (diturunkan dari email awal)
+- **Email kontak Owner:** `leoneshenkad@gmail.com`
 - **Status saat pemeriksaan 14 Oktober 2026:** belum aktif dan belum memiliki password; belum bisa login.
 
-**Provisioning Owner** harus dilakukan satu kali melalui jalur administrator privat terhadap database **Neon UAT** saja. Password dipilih dan dimasukkan sendiri melalui input tersembunyi, tidak ditulis di chat, GitHub, PR, log, maupun query SQL publik. Gunakan `scripts/hash-password.mjs` untuk menghasilkan hash `scrypt` yang kompatibel, lalu simpan hanya hash-nya dan aktifkan user yang benar sesudah memastikan target branch UAT. Verifikasi email unik, role `owner`, dan login sesudah provisioning. Jangan membuat password default atau mengaktifkan Owner tanpa password.
+**Provisioning Owner** harus dilakukan satu kali melalui jalur administrator privat terhadap database **Neon UAT** saja. Password dipilih dan dimasukkan sendiri melalui input tersembunyi, tidak ditulis di chat, GitHub, PR, log, maupun query SQL publik. Gunakan `scripts/hash-password.mjs` untuk menghasilkan hash `scrypt` yang kompatibel, lalu simpan hanya hash-nya dan aktifkan user yang benar sesudah memastikan target branch UAT. Verifikasi username unik secara global, role `owner`, dan login sesudah provisioning. Jangan membuat password default atau mengaktifkan Owner tanpa password.
 
-Preview perlu terhubung ke branch UAT yang sesuai dan memakai build terbaru. Konfigurasi `RESEND_API_KEY`, `ACTIVATION_FROM_EMAIL`, `UAT_ACTIVATION_ENABLED`, dan `UAT_ACTIVATION_BASE_URL` **tidak diperlukan untuk login email/password**; bersihkan konfigurasi lama secara terkontrol setelah memeriksa tidak ada fitur lain yang menggunakannya. Tidak perlu merge/deploy production untuk uji login Preview.
+Preview perlu terhubung ke branch UAT yang sesuai dan memakai build terbaru. Konfigurasi `RESEND_API_KEY`, `ACTIVATION_FROM_EMAIL`, `UAT_ACTIVATION_ENABLED`, dan `UAT_ACTIVATION_BASE_URL` **tidak diperlukan untuk login username/password**; bersihkan konfigurasi lama secara terkontrol setelah memeriksa tidak ada fitur lain yang menggunakannya. Tidak perlu merge/deploy production untuk uji login Preview.
 
 ## UAT dan kualitas
 
@@ -75,7 +76,7 @@ Preview perlu terhubung ke branch UAT yang sesuai dan memakai build terbaru. Kon
 - `scripts/uat-finance-concurrency.mjs`: pengujian tulis transaksi paralel dan idempotency key. **Berpotensi membuat pembayaran**; wajib memakai invoice fixture disposable, dua organisasi, dan `UAT_FINANCE_WRITE_ACK=DISPOSABLE_UAT_ONLY`. Runner ini **tidak berjalan otomatis di CI**.
 - `GET /api/finance/reconciliation`: laporan anomali pembayaran **read-only** (hak akses `finance:read`).
 
-CI menjalankan tes statis/unit, build dan audit dependensi. **Belum lulus UAT langsung** untuk dua organisasi, pembayaran paralel, browser iPhone/tablet/desktop, dan pemulihan backup. Pada pemeriksaan 14 Oktober 2026, Neon UAT telah mencatat 18 migrasi (0000–0017). Status development/production harus diverifikasi secara terpisah sebelum release.
+CI menjalankan tes statis/unit, build dan audit dependensi. **Belum lulus UAT langsung** untuk dua organisasi, pembayaran paralel, browser iPhone/tablet/desktop, dan pemulihan backup. Pada pemeriksaan 14 Oktober 2026, Neon UAT telah mencatat 19 migrasi (0000–0018). Status development/production harus diverifikasi secara terpisah sebelum release.
 
 ## Git dan deployment
 
