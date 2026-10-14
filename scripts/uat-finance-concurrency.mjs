@@ -79,13 +79,13 @@ const [listA,listB]=await Promise.all([
 assert.equal(listA.status,200,'Org A must be able to list its invoice fixtures');
 assert.equal(listB.status,200,'Org B must be able to list its invoice fixtures');
 const [dataA,dataB]=await Promise.all([listA.json(),listB.json()]);
-const invoiceA=dataA.items.find(x=>x.organizationId===userA.organizationId&&uuid.test(x.id)&&typeof x.balance==='string'&&minor(x.balance)>=200n);
+const invoiceA=dataA.items.find(x=>x.organizationId===userA.organizationId&&uuid.test(x.id)&&typeof x.balance?.outstanding==='string'&&minor(x.balance.outstanding)>=200n);
 const invoiceB=dataB.items.find(x=>x.organizationId===userB.organizationId&&uuid.test(x.id));
 assert.ok(invoiceA,'Org A needs an invoice with at least 2.00 outstanding');
 assert.ok(invoiceB,'Org B needs a tenant-owned invoice fixture');
 assert.ok(!dataB.items.some(x=>x.id===invoiceA.id),'Org B invoice list must not expose Org A invoice');
 assert.ok(!dataA.items.some(x=>x.id===invoiceB.id),'Org A invoice list must not expose Org B invoice');
-const amount=minor(invoiceA.balance);
+const amount=minor(invoiceA.balance.outstanding);
 assert.ok(amount>=200n,'Invoice fixture needs at least 2.00 outstanding');
 console.log('PASS both authenticated accounts see only their own invoice fixtures');
 const paymentPath='/api/invoices/'+invoiceA.id+'/payments';
@@ -131,7 +131,7 @@ assert.equal(finalList.status,200);assert.equal(finalHistory.status,200);
 const finalData=await finalList.json(),finalLedger=await finalHistory.json();
 const finalInvoice=finalData.items.find(x=>x.id===invoiceA.id);
 assert.ok(finalInvoice,'Paid invoice remains visible to its owning tenant');
-assert.equal(minor(finalInvoice.balance),0n,'Invoice must settle exactly without a negative balance');
+assert.equal(minor(finalInvoice.balance.outstanding),0n,'Invoice must settle exactly without a negative balance');
 assert.equal(finalLedger.items.filter(x=>x.id===first.body.payment.id).length,1);
 if(invoiceA.eventId){assert.match(invoiceA.eventId,uuid);const reconcile=await fetchApi('/api/finance/reconciliation?eventId='+invoiceA.eventId,{headers:{cookie:cookieA}});assert.equal(reconcile.status,200);const details=await reconcile.json();assert.ok(!details.items.some(x=>x.invoice_id===invoiceA.id),'No payment discrepancy expected')}
 console.log('PASS persisted ledger reconciles to a zero invoice balance');

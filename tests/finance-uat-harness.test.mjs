@@ -52,12 +52,14 @@ test('concurrency UAT blocks overpayment from distinct simultaneous idempotency 
  assert.match(harness,/Two different requests each try to settle the same remaining balance/);
  assert.match(harness,/const overpayKeys=\[randomUUID\(\),randomUUID\(\)\]/);
  assert.match(harness,/\[overpayA\.status,overpayB\.status\][\s\S]*\[201,409\]/);
- assert.match(harness,/minor\(finalInvoice\.balance\),0n/);
+ assert.match(harness,/minor\(finalInvoice\.balance\.outstanding\),0n/);
  assert.match(harness,/No payment discrepancy expected/);
 });
 test('concurrency UAT proves fixture ownership and invoice-list isolation before writing',()=>{
  assert.match(harness,/const invoiceA=dataA\.items\.find/);
  assert.match(harness,/const invoiceB=dataB\.items\.find/);
+ assert.match(harness,/typeof x\.balance\?\.outstanding==='string'&&minor\(x\.balance\.outstanding\)/);
+ assert.match(harness,/minor\(invoiceA\.balance\.outstanding\)/);
  assert.match(harness,/!dataB\.items\.some\(x=>x\.id===invoiceA\.id\)/);
  assert.match(harness,/!dataA\.items\.some\(x=>x\.id===invoiceB\.id\)/);
  assert.ok(harness.indexOf('both authenticated accounts see only their own invoice fixtures')<harness.indexOf('const paymentPath='));
