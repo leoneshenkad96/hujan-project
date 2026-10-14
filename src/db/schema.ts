@@ -23,7 +23,7 @@ export const users = pgTable('users',{
  role:varchar('role',{length:40}).notNull().default('crew'),
  active:boolean('active').notNull().default(true),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
-},t=>[uniqueIndex('users_org_email_idx').on(t.organizationId,t.email),uniqueIndex('users_email_global_normalized_idx').on(sql`lower(trim(${t.email}))`),uniqueIndex('users_username_global_normalized_idx').on(sql`lower(trim(${t.username}))`)]);
+},t=>[uniqueIndex('users_org_email_idx').on(t.organizationId,t.email),uniqueIndex('users_email_global_normalized_idx').on(sql`lower(trim(${t.email}))`),uniqueIndex('users_username_global_normalized_idx').on(sql`lower(trim(${t.username}))`),check('users_username_format_check',sql`${t.username} ~ '^[a-z0-9._-]{3,64}$'`)]);
 export const clients = pgTable('clients',{
  id:uuid('id').primaryKey().defaultRandom(),
  organizationId:uuid('organization_id').notNull().references(()=>organizations.id),

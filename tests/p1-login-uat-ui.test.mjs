@@ -6,7 +6,7 @@ test('login UI identifies rate limits and outages without exposing registered ac
  assert.match(ui,/res.status===429/);
  assert.match(ui,/Retry-After/);
  assert.match(ui,/res.status===503/);
- assert.match(ui,/Login gagal\. Periksa email dan password/);
+ assert.match(ui,/Login gagal\. Periksa username dan password/);
  assert.doesNotMatch(ui,/Email tidak terdaftar|Account does not exist/);
 });
 test('login endpoint keeps origin control, global throttle and private response',()=>{

@@ -26,7 +26,7 @@ test('sensitive API routes consistently declare nodejs runtime',()=>{
  const paths=routes('src/app/api');
  const uncovered=paths.filter(p=>{
   const source=readFileSync(p,'utf8');
-  return /export async function (POST|PATCH)\(/.test(source)&&!source.includes("runtime='nodejs'");
+  return /export async function (POST|PATCH)\(/.test(source)&&!source.includes("runtime='nodejs'")&&!source.includes('runtime = \'nodejs\'');
  });
  assert.deepEqual(uncovered,[]);
 });
