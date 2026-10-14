@@ -57,7 +57,7 @@ async function readHidden(prompt) {
 }
 
 try {
-  const connectionString = await readHidden('Paste the disposable Neon branch connection string (hidden): ');
+  const connectionString = await readHidden('Paste the connection string for uat-release-test-2026-10-14 from Neon Console > Vinca project > Branches > Connect (hidden): ');
   if (/[\r\n\s#]/.test(connectionString)) throw new Error('invalid connection string format');
   const url = new URL(connectionString);
   if (!['postgres:', 'postgresql:'].includes(url.protocol) || !url.hostname.endsWith('.neon.tech') || !['require', 'verify-full'].includes(url.searchParams.get('sslmode'))) {
