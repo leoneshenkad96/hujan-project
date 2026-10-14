@@ -201,7 +201,7 @@ No Vercel, main branch merge, production database write or creation of test fixt
 - Interactive Owner bootstrap now compares the applied migration count to the checked-in journal and confirms the username column/index before it asks for a password; it no longer relies on a stale fixed count.
 - UAT schema verifier derives its expected migration count from the checked-in Drizzle journal instead of a stale hardcoded value.
 - Finance concurrency harness verifies both invoice fixtures belong to the expected tenant and neither tenant's invoice list exposes the other tenant's invoice before attempting writes.
-- Local verification after these changes: **143/143 tests pass**, TypeScript and Drizzle checks pass, release preflight passes, ESLint has no errors (one warning in the local ESLint config), and `npm audit --omit=dev --audit-level=high` reports zero vulnerabilities.
+- On isolated worktree commit `8e41113`, fresh `npm ci` succeeded; **143/143 tests**, TypeScript, Drizzle check, release preflight and production build passed; `db:generate` reported no schema changes; and `npm audit --omit=dev --audit-level=high` found zero vulnerabilities. ESLint had no errors and one warning in `eslint.config.mjs`.
 
 ### Still not release-approved
 - No authenticated HTTP or payment-concurrency writes have been run against the disposable child; this requires the application runtime to target that child and credentials entered privately.
