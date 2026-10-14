@@ -48,6 +48,13 @@ test('concurrency UAT verifies two writes with same key only record one row',()=
  assert.match(harness,/cross\.status,404/);
  assert.match(harness,/crossWrite\.status,409/);
 });
+test('concurrency UAT blocks overpayment from distinct simultaneous idempotency keys',()=>{
+ assert.match(harness,/Two different requests each try to settle the same remaining balance/);
+ assert.match(harness,/const overpayKeys=\[randomUUID\(\),randomUUID\(\)\]/);
+ assert.match(harness,/\[overpayA\.status,overpayB\.status\][\s\S]*\[201,409\]/);
+ assert.match(harness,/minor\(finalInvoice\.balance\),0n/);
+ assert.match(harness,/No payment discrepancy expected/);
+});
 test('concurrency UAT proves fixture ownership and invoice-list isolation before writing',()=>{
  assert.match(harness,/const invoiceA=dataA\.items\.find/);
  assert.match(harness,/const invoiceB=dataB\.items\.find/);

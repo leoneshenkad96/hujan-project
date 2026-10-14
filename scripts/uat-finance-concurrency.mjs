@@ -110,5 +110,28 @@ const history=await fetchApi(paymentPath,{headers:{cookie:cookieA}});
 assert.equal(history.status,200);
 const ledger=await history.json();
 assert.equal(ledger.items.filter(x=>x.id===first.body.payment.id).length,1);
+console.log('PASS payment row persisted once');
+
+// Two different requests each try to settle the same remaining balance. Row locking must allow only one.
+const remaining=amount-half;
+assert.ok(remaining>0n,'Fixture needs a positive balance after the idempotent payment');
+const overpayPayload={amount:formatted(remaining),reference:'UAT-OVERPAY-'+randomUUID().slice(0,8)};
+const overpayKeys=[randomUUID(),randomUUID()];
+const [overpayA,overpayB]=await Promise.all([
+ post(overpayKeys[0],overpayPayload),
+ post(overpayKeys[1],{...overpayPayload,reference:'UAT-OVERPAY-'+randomUUID().slice(0,8)})
+]);
+assert.deepEqual([overpayA.status,overpayB.status].sort((a,b)=>a-b),[201,409],'Concurrent different-key attempts must not overpay');
+console.log('PASS concurrent different-key attempts cannot exceed the outstanding balance');
+const [finalList,finalHistory]=await Promise.all([
+ fetchApi('/api/invoices?limit=100',{headers:{cookie:cookieA}}),
+ fetchApi(paymentPath,{headers:{cookie:cookieA}})
+]);
+assert.equal(finalList.status,200);assert.equal(finalHistory.status,200);
+const finalData=await finalList.json(),finalLedger=await finalHistory.json();
+const finalInvoice=finalData.items.find(x=>x.id===invoiceA.id);
+assert.ok(finalInvoice,'Paid invoice remains visible to its owning tenant');
+assert.equal(minor(finalInvoice.balance),0n,'Invoice must settle exactly without a negative balance');
+assert.equal(finalLedger.items.filter(x=>x.id===first.body.payment.id).length,1);
 if(invoiceA.eventId){assert.match(invoiceA.eventId,uuid);const reconcile=await fetchApi('/api/finance/reconciliation?eventId='+invoiceA.eventId,{headers:{cookie:cookieA}});assert.equal(reconcile.status,200);const details=await reconcile.json();assert.ok(!details.items.some(x=>x.invoice_id===invoiceA.id),'No payment discrepancy expected')}
-console.log('PASS payment row persisted once; additional credit and audit scenarios require separately prepared fixtures');
+console.log('PASS persisted ledger reconciles to a zero invoice balance');
