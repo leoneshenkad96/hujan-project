@@ -127,6 +127,13 @@
       "when": 1792200000000,
       "tag": "0017_event_lead_conversion",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792000005000,
+      "tag": "0018_username_login",
+      "breakpoints": true
     }
   ]
 }
