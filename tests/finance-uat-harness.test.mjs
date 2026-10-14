@@ -28,6 +28,18 @@ test('local UAT identity endpoint is development-only, token-gated and pinned to
  assert.match(target,/current_setting\('neon\.branch_id', true\)/);
  assert.doesNotMatch(target,/\b(?:UPDATE|DELETE|INSERT|ALTER|DROP|CREATE TABLE)\b/i);
 });
+test('local UAT env setup verifies the disposable database, hides secrets and never overwrites',()=>{
+ const setup=readFileSync('scripts/prepare-local-uat-env.mjs','utf8');
+ assert.match(setup,/stdin\.setRawMode\(true\)/);
+ assert.match(setup,/br-green-pine-b39zmics/);
+ assert.match(setup,/current_setting\('neon\.branch_id', true\)/);
+ assert.match(setup,/flag: 'wx'/);
+ assert.match(setup,/randomBytes\(32\)/);
+ assert.match(setup,/Secret values were not displayed/);
+ assert.match(setup,/\.env\.\*/);
+ assert.doesNotMatch(setup,/console\.(?:log|error)\([^\n]*(?:connectionString|targetToken)/i);
+ assert.doesNotMatch(setup,/\b(?:UPDATE|DELETE|INSERT|ALTER|DROP|CREATE TABLE)\b/i);
+});
 test('concurrency UAT verifies two writes with same key only record one row',()=>{
  assert.match(harness,/Promise\.all\(\[post\(key\),post\(key\)\]\)/);
  assert.match(harness,/\[200,201\]/);
