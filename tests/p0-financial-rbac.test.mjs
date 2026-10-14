@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {can,ROLES,PERMISSIONS} from '../src/lib/permissions.ts';
-test('seven roles use a default-deny access matrix',()=>{
- assert.equal(ROLES.length,7);
+test('configured roles use a default-deny access matrix',()=>{
+ assert.equal(ROLES.length,8);
  for(const name of Object.keys(PERMISSIONS)){
   assert.equal(can('unknown',name),false);
-  assert.equal(can('owner',name),true);
+  assert.equal(can('owner',name),name!=='client_portal:read');
  }
  for(const role of ['sales','production','crew','project_manager'])
   assert.equal(can(role,'finance:write'),false);

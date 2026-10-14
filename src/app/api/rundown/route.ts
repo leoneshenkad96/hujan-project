@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from 'next/server';
 import { isTrustedOrigin } from '@/lib/security';
-import {and,asc,eq} from 'drizzle-orm';
+import {and,asc,eq,ilike,max,or} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
 import {events,rundownItems,users} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
@@ -9,12 +9,16 @@ export const runtime='nodejs';export const dynamic='force-dynamic';
 const fail=(error:string,status:number)=>NextResponse.json({error},{status,headers:{'Cache-Control':'no-store'}});
 export async function GET(req:NextRequest){
  try{const a=await requirePermission('events:read');if(a.error)return fail(a.error,a.error==='unauthorized'?401:403);
- const eventId=req.nextUrl.searchParams.get('eventId');if(!validUuid(eventId))return fail('Valid eventId required',400);
+ const params=req.nextUrl.searchParams,eventId=params.get('eventId'),page=Number(params.get('page')||'1'),limit=Number(params.get('limit')||'50'),q=(params.get('q')||'').trim(),status=params.get('status');
+ if(!validUuid(eventId))return fail('Valid eventId required',400);
+ if(!Number.isSafeInteger(page)||page<1||page>10000||!Number.isSafeInteger(limit)||limit<1||limit>100||q.length>100||status&&!['planned','standby','on_air','done','skipped'].includes(status))return fail('Invalid rundown filters',400);
  const db=getDatabase(),org=a.user.organizationId;
  const [event]=await db.select({id:events.id}).from(events).where(and(eq(events.id,eventId),eq(events.organizationId,org))).limit(1);
  if(!event)return fail('Event not found',404);
- const items=await db.select().from(rundownItems).where(and(eq(rundownItems.organizationId,org),eq(rundownItems.eventId,eventId))).orderBy(asc(rundownItems.position),asc(rundownItems.startTime),asc(rundownItems.id)).limit(501);
- return NextResponse.json({items:items.slice(0,500),hasMore:items.length>500},{headers:{'Cache-Control':'no-store'}});
+ const escaped=q.replace(/[\\%_]/g,'\\$&');
+ const items=await db.select().from(rundownItems).where(and(eq(rundownItems.organizationId,org),eq(rundownItems.eventId,eventId),status?eq(rundownItems.status,status as typeof rundownItems.$inferSelect.status):undefined,q?or(ilike(rundownItems.title,`%${escaped}%`),ilike(rundownItems.cue,`%${escaped}%`)):undefined)).orderBy(asc(rundownItems.position),asc(rundownItems.startTime),asc(rundownItems.id)).limit(limit+1).offset((page-1)*limit);
+ const [lastPosition]=await db.select({value:max(rundownItems.position)}).from(rundownItems).where(and(eq(rundownItems.organizationId,org),eq(rundownItems.eventId,eventId)));
+ return NextResponse.json({items:items.slice(0,limit),page,limit,hasMore:items.length>limit,nextPosition:(lastPosition?.value??0)+1},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Rundown unavailable',503)}
 }
 export async function POST(req:NextRequest){

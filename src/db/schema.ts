@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, varchar, text, integer, numeric, timestamp, date, uniqueIndex, index, boolean, jsonb, check } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, varchar, text, integer, numeric, timestamp, date, uniqueIndex, index, boolean, jsonb, check, foreignKey } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
 export const eventStatus = pgEnum('event_status', ['planning','confirmed','pre_production','live','completed','cancelled']);
@@ -23,7 +23,7 @@ export const users = pgTable('users',{
  role:varchar('role',{length:40}).notNull().default('crew'),
  active:boolean('active').notNull().default(true),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
-},t=>[uniqueIndex('users_org_email_idx').on(t.organizationId,t.email),uniqueIndex('users_email_global_normalized_idx').on(sql`lower(trim(${t.email}))`),uniqueIndex('users_username_global_normalized_idx').on(sql`lower(trim(${t.username}))`),check('users_username_format_check',sql`${t.username} ~ '^[a-z0-9._-]{3,64}$'`)]);
+},t=>[uniqueIndex('users_org_id_pair_idx').on(t.organizationId,t.id),uniqueIndex('users_org_email_idx').on(t.organizationId,t.email),uniqueIndex('users_email_global_normalized_idx').on(sql`lower(trim(${t.email}))`),uniqueIndex('users_username_global_normalized_idx').on(sql`lower(trim(${t.username}))`),check('users_username_format_check',sql`${t.username} ~ '^[a-z0-9._-]{3,64}$'`)]);
 export const clients = pgTable('clients',{
  id:uuid('id').primaryKey().defaultRandom(),
  organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
@@ -58,7 +58,18 @@ export const events = pgTable('events',{
  projectManagerId:uuid('project_manager_id').references(()=>users.id),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
  updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow()
-},t=>[uniqueIndex('events_org_code_idx').on(t.organizationId,t.code),uniqueIndex('events_lead_unique_idx').on(t.leadId),index('events_org_date_idx').on(t.organizationId,t.eventDate)]);
+},t=>[uniqueIndex('events_org_id_pair_idx').on(t.organizationId,t.id),uniqueIndex('events_org_code_idx').on(t.organizationId,t.code),uniqueIndex('events_lead_unique_idx').on(t.leadId),index('events_org_date_idx').on(t.organizationId,t.eventDate)]);
+export const clientEventAccess = pgTable('client_event_access',{
+ organizationId:uuid('organization_id').notNull().references(()=>organizations.id,{onDelete:'cascade'}),
+ userId:uuid('user_id').notNull(),
+ eventId:uuid('event_id').notNull(),
+ createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow()
+},t=>[
+ uniqueIndex('client_event_access_user_idx').on(t.userId),
+ index('client_event_access_event_idx').on(t.organizationId,t.eventId),
+ foreignKey({columns:[t.organizationId,t.userId],foreignColumns:[users.organizationId,users.id],name:'client_event_access_user_org_fk'}).onDelete('cascade'),
+ foreignKey({columns:[t.organizationId,t.eventId],foreignColumns:[events.organizationId,events.id],name:'client_event_access_event_org_fk'}).onDelete('cascade')
+]);
 export const tasks = pgTable('event_tasks',{
  id:uuid('id').primaryKey().defaultRandom(),
  organizationId:uuid('organization_id').notNull().references(()=>organizations.id),
