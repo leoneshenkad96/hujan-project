@@ -15,20 +15,20 @@ export async function POST(request:NextRequest){
  let input:unknown;
  try{input=await request.json()}catch{return NextResponse.json({error:'Invalid JSON'},{status:400})}
  if(!input||typeof input!=='object'||Array.isArray(input))return NextResponse.json({error:'Invalid input'},{status:400});
- const {email,password} = input as Record<string,unknown>;
- if(typeof email!=='string'||typeof password!=='string'||email.length>254||password.length>256||password.length===0||!email.includes('@'))
+ const {username,password} = input as Record<string,unknown>;
+ if(typeof username!=='string'||typeof password!=='string'||username.length>64||password.length>256||password.length===0||!(/^[a-zA-Z0-9._-]{3,64}$/.test(username)))
  return NextResponse.json({error:'Invalid credentials'},{status:401});
- const normalizedEmail=email.trim().toLowerCase();
+ const normalizedUsername=username.trim().toLowerCase();
  try{
   const ip=request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() ?? 'unknown';
   // Global account throttle prevents bypass by changing organization input.
-  const allowed=await enforceLoginRateLimit(ip,'email-login',normalizedEmail);
+  const allowed=await enforceLoginRateLimit(ip,'username-login',normalizedUsername);
   if(!allowed)return NextResponse.json({error:'Too many attempts. Try again later.'},{status:429,headers:{'Cache-Control':'no-store','Retry-After':'900'}});
   const db=getDatabase();
-  // Email-only login MUST fail closed for duplicate active identities across tenants.
+  // Username login MUST fail closed if duplicate identities ever appear across tenants.
   // An administrator must resolve duplicates before this login method can be used.
   const rows=await db.select({id:users.id,organizationId:users.organizationId,email:users.email,name:users.name,role:users.role,hash:users.passwordHash,active:users.active})
-   .from(users).where(sql`lower(trim(${users.email})) = ${normalizedEmail}`).limit(2);
+   .from(users).where(sql`lower(trim(${users.username})) = ${normalizedUsername}`).limit(2);
   const found=rows.length===1?rows[0]:null;
   const valid=await verifyPassword(password,found?.hash??null);
   if(!found||!valid)return NextResponse.json({error:'Invalid credentials'},{status:401,headers:{'Cache-Control':'no-store'}});
