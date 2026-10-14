@@ -1,6 +1,7 @@
 'use client';
 import { useState,type FormEvent } from 'react';
 import Link from 'next/link';
+import PasswordInput from '../password-input';
 export default function OwnerSetup(){
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[done,setDone]=useState(false);
  async function submit(e:FormEvent<HTMLFormElement>){
@@ -28,9 +29,9 @@ export default function OwnerSetup(){
    <form onSubmit={submit} style={{display:'grid',gap:14}}>
     <p style={{fontSize:14,color:'#69606e',lineHeight:1.5}}>Khusus pengujian Vinca. Masukkan kode setup dari administrator dan buat password pribadi. Kode bukan password login.</p>
     <label>Username<input style={field} value="leoneshenkad" readOnly/></label>
-    <label>Kode setup<input style={field} required name="setupCode" type="password" autoComplete="off"/></label>
-    <label>Password baru (minimal 12 karakter)<input style={field} required name="password" type="password" minLength={12} maxLength={256} autoComplete="new-password"/></label>
-    <label>Konfirmasi password<input style={field} required name="confirm" type="password" minLength={12} autoComplete="new-password"/></label>
+    <label>Kode setup<PasswordInput style={field} required name="setupCode" autoComplete="off"/></label>
+    <label>Password baru (minimal 12 karakter)<PasswordInput style={field} required name="password" minLength={12} maxLength={256} autoComplete="new-password"/></label>
+    <label>Konfirmasi password<PasswordInput style={field} required name="confirm" minLength={12} autoComplete="new-password"/></label>
     {message&&<p role="alert" style={{color:'#a52650'}}>{message}</p>}
     <button type="submit" disabled={busy} style={{padding:14,border:0,borderRadius:10,background:'#c44c83',color:'white',fontWeight:700}}>{busy?'Memproses…':'Aktifkan Owner'}</button>
     <Link href="/login">Kembali ke Login</Link>
