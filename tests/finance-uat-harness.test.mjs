@@ -7,6 +7,8 @@ test('concurrency UAT requires explicit disposable write approval and the two na
  assert.match(harness,/JSON\.stringify\(\{username,password\}\)/);
  assert.match(harness,/userA\.organizationId,userB\.organizationId/);
  assert.match(harness,/body\.user\?\.role,'finance'/);
+ assert.match(harness,/readPassword\(username\)/);
+ assert.match(harness,/stdin\.isTTY/);
 });
 test('concurrency UAT rejects other host and protects production',()=>{
  assert.match(harness,/origin!==e\.UAT_EXACT_ALLOWED_ORIGIN/);
@@ -14,7 +16,7 @@ test('concurrency UAT rejects other host and protects production',()=>{
  assert.match(harness,/kasapink-erp/);
  assert.match(harness,/localhost\|127/);
  assert.match(harness,/UAT_LOCAL_TARGET_TOKEN/);
- assert.ok(harness.indexOf('/api/uat/local-test-target')<harness.indexOf("login('uat_finance_a'"));
+ assert.ok(harness.indexOf('/api/uat/local-test-target')<harness.indexOf("readPassword('uat_finance_a')"));
 });
 test('local UAT identity endpoint is development-only, token-gated and pinned to the disposable branch',()=>{
  const target=readFileSync('src/app/api/uat/local-test-target/route.ts','utf8');

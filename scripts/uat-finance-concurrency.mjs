@@ -4,10 +4,12 @@
 // NEVER scheduled or executed by CI; a payment is written only after the disposable DB target is verified and is not auto-cleaned up.
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
+import {emitKeypressEvents} from 'node:readline';
+import {stdin,stdout} from 'node:process';
 import {minor} from '../src/lib/invoice-validation.ts';
 
 const e=process.env;
-const required=['UAT_FINANCE_WRITE_ACK','UAT_BASE_URL','UAT_EXACT_ALLOWED_ORIGIN','UAT_PASSWORD_A','UAT_PASSWORD_B'];
+const required=['UAT_FINANCE_WRITE_ACK','UAT_BASE_URL','UAT_EXACT_ALLOWED_ORIGIN'];
 const missing=required.filter(k=>!e[k]);
 if(missing.length||e.UAT_FINANCE_WRITE_ACK!=='DISPOSABLE_UAT_ONLY'){
  console.error('NOT RUN: explicit disposable UAT write approval and isolated fixtures required:',missing.join(', '));process.exit(2);
@@ -31,6 +33,23 @@ if(isLocalOrigin){
  assert.deepEqual(proof,{verified:true,target:'disposable-uat'});
  console.log('PASS local app verified against the disposable UAT database');
 }
+async function readPassword(username){
+ if(!stdin.isTTY||!stdin.setRawMode)throw new Error('Enter UAT passwords as environment variables or run this script in a private interactive terminal');
+ emitKeypressEvents(stdin);stdin.setRawMode(true);stdout.write('Password for '+username+' (hidden): ');
+ try{return await new Promise((resolve,reject)=>{
+  let value='';
+  function onKey(str,key){
+   if(key?.name==='return'||key?.name==='enter'){stdin.off('keypress',onKey);stdout.write('\n');resolve(value);return}
+   if(key?.ctrl&&key.name==='c'){stdin.off('keypress',onKey);reject(new Error('Cancelled'));return}
+   if(key?.name==='backspace'){value=value.slice(0,-1);return}
+   if(str&&!key?.ctrl&&!key?.meta&&str>=' '&&value.length<512)value+=str;
+  }
+  stdin.on('keypress',onKey);
+ })}finally{stdin.setRawMode(false)}
+}
+const passwordA=e.UAT_PASSWORD_A??await readPassword('uat_finance_a');
+const passwordB=e.UAT_PASSWORD_B??await readPassword('uat_finance_b');
+stdin.pause();
 async function login(username,password){
  const response=await fetchApi('/api/auth/login',{method:'POST',headers:{origin,'Content-Type':'application/json'},body:JSON.stringify({username,password})});
  assert.equal(response.status,200,'UAT login required');
@@ -39,8 +58,8 @@ async function login(username,password){
  return cookie;
 }
 const [cookieA,cookieB]=await Promise.all([
- login('uat_finance_a',e.UAT_PASSWORD_A),
- login('uat_finance_b',e.UAT_PASSWORD_B)
+ login('uat_finance_a',passwordA),
+ login('uat_finance_b',passwordB)
 ]);
 async function profile(cookie){
  const response=await fetchApi('/api/auth/me',{headers:{cookie}});
