@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "users_email_global_normalized_idx" ON "users" USING btree (lower(trim("email")));

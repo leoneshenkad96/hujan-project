@@ -1,0 +1,35 @@
+name: Procurement PR Checks
+on:
+  push:
+    branches: ['feature/08-vendor-procurement']
+  pull_request:
+    branches: ['feature/07-tasks-timeline']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npm run db:check
+      - name: Verify checked-in migration has no schema drift
+        run: |
+          npm run db:generate
+          git diff --exit-code -- drizzle/
+      - name: Upload migration artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: procurement-migrations
+          path: drizzle/
+          if-no-files-found: error

@@ -1,0 +1,216 @@
+# Final Integration & UAT — Vinca ERP
+
+## Execution scope
+Integration candidate: `integration/final-uat`, copied from `feature/16-release-readiness` (PR #16). **No merge to main, no Vercel deployment, no Neon production changes.**
+
+### Verified by API/schema inspection
+- [x] All 16 stacked PRs are open, not merged and marked ready for review.
+- [x] Neon **development** migration ledger contains seven entries.
+- [x] Neon **development** has 17 tables in `public`.
+- [x] The `auth_sessions` and `invoice_payments` tables exist.
+- [x] Canonical migrations `0000` to `0006` present on integration branch.
+- [ ] Exact commit ancestry/merge-diff reconciliation and human PR approvals.
+
+### Automated integration CI
+- [ ] `npm ci` from reviewed lockfile
+- [ ] TypeScript, ESLint, unit/security/finance tests
+- [ ] Next.js production build, Drizzle schema check
+- [ ] `npm audit --omit=dev --audit-level=high`
+- [ ] Release preflight and integration-route static coverage
+
+### Live UAT — **NOT TESTED**
+These must run against a real authenticated dev runtime with disposable fixtures only, after setup approval.
+
+| ID | Scenario | Required result |
+|---|---|---|
+| AUTH-01 | Owner login / logout / expiry | Sessions create, revoke and expire |
+| AUTH-02 | Bad password, lockout, missing/cross Origin | 401, 429, 403 |
+| RBAC-01 | Role matrix across all mutations | 403 where permission denied |
+| TENANT-01 | Org A user requests Org B object UUID | 404 / no data disclosure |
+| CRM-01 | Client + lead create/filter | Scope and values persist |
+| EVT-01 | Event + PM / task / vendor / rundown | Correct associations, validation |
+| PO-01 | Vendor PO state and commitment | PO does not post actual expense |
+| RAB-01 | Expense and audit atomicity | Roll back together on failure |
+| SALES-01 | Quote accepted -> draft contract | No unverified signature claim |
+| FIN-01 | Invoice DP/cicilan/pelunasan | Correct balances and ledgers |
+| FIN-02 | Concurrent overpayment attempts | At most outstanding amount posts |
+| FIN-03 | Retry same payment after lost response | No duplicate postings (idempotency key implemented; live concurrent UAT pending) |
+| REPORT-01 | Dashboard / profitability reconciled with records | No PO double counting |
+| UI-01 | Keyboard, mobile/tablet/desktop, long tables | No clipping or inaccessible dialogs |
+| DR-01 | Backup and restore exercise on disposable Neon branch | Recovery verified |
+
+### Blockers and decisions
+**Current go/no-go: NO-GO.** Do not seed an owner in any existing shared database without approval. No live UAT has run yet. Before production release, verify payment idempotency under real concurrent load and re-review mutating API tenant checks, audit completeness, trusted proxy configuration, finance permissions and customer approval semantics. Browser tests need a reachable authenticated test environment. Finance/contract controls and restore rehearsal remain outstanding.
+
+### Release approval
+A green GitHub integration check means code compiles and static tests pass. It is **not** proof of end-to-end behavior or authority to merge or deploy. Require explicit separate approvals for merging stacked PRs, Neon production migrations and Vercel deployment.
+
+## Isolated Neon UAT branch — prepared
+- Neon project: `fancy-cell-64250119` (Vinca only).
+- Parent: development `br-muddy-leaf-b34gxxf2`.
+- Disposable UAT branch: `br-long-wildflower-b3nsciay` (`uat-isolated-2026-10-13`).
+- Read-only verification on isolated branch: **7 migrations, 0 organizations, 0 users, 0 payments**.
+- No UAT accounts, invoices, vendor payments, or customer records created. **Do not mistake an empty UAT branch for a successful live UAT.**
+
+## Live smoke runner
+`node scripts/uat-http-smoke.mjs` requires `UAT_BASE_URL` and distinct `UAT_ORG_A/UAT_USERNAME_A/UAT_PASSWORD_A` and `UAT_ORG_B/UAT_USERNAME_B/UAT_PASSWORD_B` supplied securely at runtime, not committed to GitHub. Login uses username credentials. It checks anonymous invoice denial, isolated login, event read, optional IDOR across tenant events, invalid-origin logout, and finance access.
+
+- The script refuses hosts that do not indicate UAT/preview/localhost and rejects Kasapink.
+- Never connect a UAT website to the Vinca production Neon branch.
+- UAT URL, user credentials and server runtime have not been provisioned.
+- This smoke script makes no application mutations other than login sessions, and therefore **does not verify money writes or concurrency**. Those require isolated test fixture accounts, a separate transaction test plan and observed database ledger invariants.
+
+## Latest checkpoint (2026-10-13)
+- **Nine** canonical migrations (0000–0008) now recorded on isolated Neon UAT; development baseline above describes the earlier seven migrations.
+- UAT DB latest read-only inspection: one organization, one inactive/passwordless Owner, zero activation tokens. Org B creation was attempted but blocked by connector safety controls; **do not claim two-org UAT completed**.
+- HTTP runner and opt-in finance concurrency runner prepared, not executed with authenticated fixtures.
+- Finance reconciliation read-only endpoint and regressions passed CI, but there are no test invoices/payments to assess.
+- GitHub README refreshed with setup, modules, environment safety, UAT gates, and production NO-GO.
+- Email sender/Preview activation flow still blocked until configuration and Vercel Preview redeploy; no actual activation email sent.
+
+
+## P0 Gate Tracker — 2026-10-13 (live status)
+
+This section is the current release gate; earlier historical checkpoints above are retained for audit history.
+
+**Release decision: NO-GO. Do not merge or deploy to production while unchecked blocking items remain.**
+
+### Gate A — Integration and safe preview
+- [x] Confirm integration branch `integration/final-uat` is ahead of `main` without being behind (251 commits ahead as checked).
+- [x] GitHub PR #17 CI reports success in its last recorded run; passing CI is not equivalent to live UAT.
+- [x] Vercel Preview deployment `dpl_3CbNJ1Y8SNVn2WHpxghj95MPvv6u`, commit `70db1de`, reached READY. This proves build readiness only.
+- [ ] Re-run CI on the exact final tested commit and reconcile the stacked PR diff/reviews before merge.
+
+### Gate B — Owner authentication (blocking)
+- [x] Isolated UAT Neon branch has nine migrations, one organization, one inactive Owner, zero payments.
+- [ ] Configure and verify preview-only `RESEND_API_KEY` and `ACTIVATION_FROM_EMAIL`; these were absent from the Vercel project environment variable listing.
+- [ ] Verify preview deployment URL, `UAT_ACTIVATION_BASE_URL`, and `DATABASE_URL` refer to the intended isolated UAT environment, without exposing secrets.
+- [ ] Send activation email and verify one-time expiry/consumption, then Owner login/logout and session expiration.
+
+### Gate C — Access control / tenant isolation (blocking)
+- [ ] Provision a second disposable organization and least-privilege accounts (UAT only).
+- [ ] Execute authenticated cross-tenant and role-matrix HTTP tests, including 401/403/404, CSRF/Origin, brute-force throttling and IDOR.
+- [ ] Inspect test logs and verify sensitive financial data is never returned to unauthorized roles.
+
+### Gate D — Finance invariants (blocking)
+- [ ] Create disposable invoices and payments in isolated UAT only.
+- [ ] Execute concurrent payments, same-key retry, conflicting-key reuse, overpayment, rollback and reconciliation tests; confirm the persisted ledger matches invoice balances and audit rows.
+- [ ] Review finance approval/contract semantics and resulting dashboard amounts.
+
+### Gate E — Operational release safety (blocking)
+- [ ] Run end-to-end CRM → Event → Vendor/PO → RAB → Rundown → Quotation/Contract → Invoice → Payment → Report test.
+- [ ] Verify responsive iPhone/tablet/desktop flows and basic accessibility.
+- [ ] Perform a disposable backup/restore drill, confirm production schema/migration plan and separate secrets.
+- [ ] Explicit Owner signoff for PR merges, production Neon migration and Vercel production deployment.
+
+**Non-goals:** no new functional modules, no production migrations, no production release until all gates are evidenced. Keep the ERP Vinca environment separate from Kasapink ERP.
+
+
+### P0 activation diagnostics (2026-10-13, verified read-only)
+- [x] Vercel Preview deployment for commit `70db1de` reached `READY` (build only).
+- [x] Resend account has an API key listed, but **no verified sender domain**; API key metadata alone cannot provide the secret value to Vercel.
+- [x] Branch-scoped Vercel activation configuration checked: `UAT_ACTIVATION_ENABLED` is not `true`, and `UAT_ACTIVATION_BASE_URL` does not match the tested deployment URL or branch alias.
+- [ ] Set a verified sender (or an authorized Resend test sender for its permitted recipient), securely provision Resend sending key under Preview only; never write keys to GitHub.
+- [ ] Configure a stable approved Preview origin, verify domain protection/access, set `UAT_ACTIVATION_ENABLED=true` **after** the email/URL/database checks, redeploy Preview, then test activation and login.
+- [ ] Verify exact Neon branch target and proceed with multi-tenant and finance HTTP tests on disposable fixtures only.
+
+No production configuration or database was changed by these diagnostics.
+
+
+## P0 login simplification implementation checkpoint (2026-10-13)
+
+- [x] Login screen now asks only for email and password, without organization slug.
+- [x] Server continues validating same-origin requests, password hashes, per-IP/account rate limits, active status and revocable HttpOnly session cookies.
+- [x] Email-only identity selection rejects email collisions across all tenants (fail-closed; generic 401). **Before onboarding multiple organizations, ensure unique email ownership or introduce an explicit secure account chooser.**
+- [x] Legacy /activate page redirects to /login; obsolete Resend activation request/complete APIs return 410 with Origin validation retained.
+- [ ] Admin-provisioned first Owner needs a securely generated password hash and explicit UAT-only update through an authorized secure channel. The existing Owner remains inactive/passwordless.
+- [ ] Add/verify administrator-controlled account creation, reset password, role editing, invitation/change-password-on-first-login before general user onboarding.
+- [ ] CI and runtime regression validation of the **new** login build, incorrect password, inactive account, cross-tenant duplicate email, rate limits, logout, session expiry.
+- [ ] Check that Vercel Preview environment points to isolated Neon UAT (do not print the connection string) and redeploy latest integration commit for browser testing.
+- [ ] Complete multi-tenant, finance and backup UAT before production.
+
+This checkpoint replaces the old email-activation workflow: **Resend is not required to log in.** No default password, public registration endpoint, plaintext credential, database write, PR merge or production deployment was made by the login changes.
+
+
+## P0 latest security review and release boundary (2026-10-13)
+
+- [x] Secure admin user management API and Vinca-themed user screen committed; sidebar opens protected `/users`.
+- [x] Updated legacy activation regression test to reflect retired Resend endpoints.
+- [x] User profile update and session revocation use one PostgreSQL statement; the code-level regression test checks that guard.
+- [x] Removed misleading `Demo Administrator` identity and demo-reset control from main workspace.
+- [ ] Remaining demo-only React state and fallback widgets must be removed or isolated before using real events. Some modules currently use live API; do not assert all modules are persistence-safe without browser UAT.
+- [ ] Initial Owner account is not provisioned; trusted operator must set a unique strong password using UAT-only Neon connection, verify role and active flag, and never commit/log credentials.
+- [ ] Enforce database-level **global normalized email uniqueness**, or add a proper tenant-aware identity selector. App-only duplicate checks are not concurrency-safe across organizations.
+- [ ] Validate account administration in running UAT: role escalation/denial, inactive accounts, replay sessions, duplicate email and concurrent edits, audit trail.
+- [ ] Run two-organization IDOR UAT, event workflow and finance concurrent payment tests on disposable fixtures.
+- [ ] Verify migration and restore readiness before production GO.
+
+**Scope:** GitHub integration branch only; no Vercel calls, Neon writes, main merge or production deploy. CI for these recent edits must be checked separately. Current UAT readiness: **NO-GO**.
+
+
+### UAT branch database preflight — 2026-10-13 (read-only verified)
+- [x] Correct isolated Vinca UAT branch explicitly scoped in Neon read-only queries.
+- [x] Duplicate normalized emails query returned **0 duplicates**.
+- [x] UAT currently has **1 user**, **0 active password-backed accounts**, and **9 applied Drizzle migrations**.
+- [x] Existing user indexes are `users_pkey` and `users_org_email_idx`; new global normalized email index is **not applied**.
+- [x] Migration `0009_email_global_unique` and 10-entry journal/snapshot are committed in GitHub, and preceding GitHub CI completed successfully.
+- [x] Owner bootstrap CLI now requires explicit UAT acknowledgement, private TTY, hidden password + confirmation, and refuses to overwrite an already-active owner.
+- [ ] Apply migration **with Drizzle migration history**, after scoped UAT backup/restore plan; do not execute an ad-hoc index creation that leaves Drizzle's ledger out of sync.
+- [ ] Verify index appears, Drizzle migration count becomes 10, then use a trusted UAT-only terminal to activate Owner without transmitting secrets through chat or GitHub.
+- [ ] Complete login, tenant isolation, event, finance and restore UAT before production sign-off.
+
+No Neon SQL writes, Vercel operations, production schema or main branch changes were performed for this checkpoint.
+
+
+### Verified UAT migration state — 2026-10-13 (supersedes earlier preflight)
+- [x] Neon project `fancy-cell-64250119`, explicit isolated branch `br-long-wildflower-b3nsciay`.
+- [x] Read-only SQL confirms `drizzle.__drizzle_migrations` has **10 rows**.
+- [x] Read-only SQL confirms index `users_email_global_normalized_idx` is present.
+- [x] Read-only SQL confirms **1** `vinca-uat` Owner and **0** active Owner accounts with password hashes.
+- [ ] First Owner must be activated through a trusted interactive UAT terminal and correct UAT-only Neon connection. No password is sent via chat, repository, PR or logs.
+- [ ] Confirm UAT database branch identity before running `scripts/bootstrap-uat-owner.mjs`; environment variable `VINCA_BOOTSTRAP_BRANCH` alone does not prove which branch `DATABASE_URL` targets.
+- [ ] Runtime login, session invalidation, 2-tenant isolation, financial write concurrency and restore drills remain mandatory.
+
+**Migration `0009_email_global_unique` is applied on UAT; do not run it a second time.** Prior checklist entries describing 9 migrations or an absent index are historical preflight observations, not current state.
+
+
+### Mobile-only P0 audit checkpoint (read-only Neon UAT, 2026-10-13)
+- [x] Confirmed isolated Neon UAT branch `br-long-wildflower-b3nsciay`, 10 migration ledger entries.
+- [x] Integrity SQL found 0 orphan user references, 0 mismatched event/client organizations, 0 mismatched invoice/event organizations, 0 mismatched payment/invoice organizations.
+- [x] Invoice balance invariants (nonpositive amount, negative paid amount, paid exceeding total) show 0 violations.
+- [x] Payment amount invariant (nonpositive payment) shows 0 violations.
+- [x] Added reusable `scripts/audit-uat-integrity.mjs` and static safety checks; SQL is SELECT-only, scoped to the expected Neon project/branch/database.
+- [ ] All events, invoices and payments are currently empty and UAT has no login-ready owner. Empty-table integrity checks **do not** prove end-to-end business behavior.
+- [ ] Activate Owner through trusted private TTY, then provision second tenant and run isolated HTTP/auth and finance UAT.
+- [ ] Verify the latest CI workflow for the added audit script and tests before marking the commit green.
+
+No Vercel, main branch merge, production database write or creation of test fixtures took place.
+
+
+## Current checkpoint — 2026-10-14 (supersedes earlier live-data counts above)
+
+### Read-only UAT verification
+- Neon project `fancy-cell-64250119`, UAT branch `br-long-wildflower-b3nsciay`, database `eventorganizer` was identity-checked before querying.
+- UAT schema ledger contains **19 migrations**, matching `drizzle/meta/_journal.json`; the global normalized-email index is present, normalized email duplicates are zero, and exactly one UAT Owner exists.
+- UAT contains **2 organizations, 8 active users, 8 events, 4 invoices and 4 payments**. Three named accounts (`leoneshenkad`, `uat_finance_a`, `uat_finance_b`) are active and have password hashes; passwords were not read.
+- Read-only integrity audit: zero orphan users, tenant-link mismatches, invalid invoice balances, invalid payment amounts, or invoice/payment reconciliation mismatches.
+- Disposable child clone `br-green-pine-b39zmics` was independently identity-checked. It has the same baseline counts and zero invoice/payment reconciliation mismatches; it expires **2026-10-17 00:00 UTC**. No finance writes have been run on the clone.
+
+### Local review repairs (not yet pushed)
+- Owner setup endpoint now verifies the exact Neon project, branch and database before rate-limit writes or account changes.
+- Interactive Owner bootstrap now compares the applied migration count to the checked-in journal and confirms the username column/index before it asks for a password; it no longer relies on a stale fixed count.
+- UAT schema verifier derives its expected migration count from the checked-in Drizzle journal instead of a stale hardcoded value.
+- Finance concurrency harness verifies both invoice fixtures belong to the expected tenant and neither tenant's invoice list exposes the other tenant's invoice before attempting writes.
+- On isolated worktree commit `8e41113`, fresh `npm ci` succeeded; **143/143 tests**, TypeScript, Drizzle check, release preflight and production build passed; `db:generate` reported no schema changes; and `npm audit --omit=dev --audit-level=high` found zero vulnerabilities. ESLint had no errors and one warning in `eslint.config.mjs`.
+
+### Still not release-approved
+- No authenticated HTTP or payment-concurrency writes have been run against the disposable child; this requires the application runtime to target that child and credentials entered privately.
+- Browser business-flow/accessibility walkthrough and disposable restore drill remain outstanding.
+- PRs #1–#17 currently have no submitted reviews; PR #17 remains Draft and based on `feature/16-release-readiness`. The GitHub status context `Vercel` is failing on PRs #4–#16; no Vercel inspection or configuration change was performed in this checkpoint.
+- These local repairs are not yet on the GitHub PR head, so they have no corresponding CI run or review. Re-run CI and obtain required human review before the stacked merge sequence. Production migration/deploy remain out of scope until the release gates and owner approvals are complete.
+
+### Local disposable finance UAT (no Vercel)
+- The concurrency harness now supports `localhost` only when the development server proves its database is the exact disposable child `br-green-pine-b39zmics` in the Vinca project/database. A private `UAT_LOCAL_TARGET_TOKEN` (32+ characters) is required; the endpoint is unavailable outside `NODE_ENV=development` and performs a read-only identity check.
+- Run `node scripts/prepare-local-uat-env.mjs` in a private interactive terminal and paste the disposable branch URL at its hidden prompt. It verifies the exact project/branch/database using read-only SQL, refuses to overwrite an existing file, and creates a gitignored `.env.uat.local` without printing credentials. It does **not** touch `.env.local`. The runner later prompts for both Finance passwords without echoing them; never send them through chat or commit them.
+- From the project root, start an isolated local server with `node --env-file=.env.uat.local node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3001`; in a second terminal run `node --env-file=.env.uat.local scripts/uat-finance-concurrency.mjs`.
+- Before any login or write, the runner verifies the exact local origin and database target, confirms both accounts have Finance role in distinct organizations, and selects tenant-owned invoice fixtures from their own invoice lists. It tests a concurrent same-key half-payment retry, then has two different keys race to settle the remaining balance; only one may succeed, and the invoice must reconcile to zero without overpayment. These are persistent writes on the disposable child and are **not** cleaned up automatically. It must never run against `.env.local`, the shared UAT parent, or production.
