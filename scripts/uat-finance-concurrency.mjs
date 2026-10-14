@@ -7,7 +7,7 @@ import {randomUUID} from 'node:crypto';
 import {minor} from '../src/lib/invoice-validation.ts';
 
 const e=process.env;
-const required=['UAT_FINANCE_WRITE_ACK','UAT_BASE_URL','UAT_EXACT_ALLOWED_ORIGIN','UAT_ORG_A','UAT_EMAIL_A','UAT_PASSWORD_A','UAT_ORG_B','UAT_EMAIL_B','UAT_PASSWORD_B','UAT_INVOICE_A','UAT_INVOICE_B','UAT_EXPECTED_OUTSTANDING_A'];
+const required=['UAT_FINANCE_WRITE_ACK','UAT_BASE_URL','UAT_EXACT_ALLOWED_ORIGIN','UAT_ORG_A','UAT_USERNAME_A','UAT_PASSWORD_A','UAT_ORG_B','UAT_USERNAME_B','UAT_PASSWORD_B','UAT_INVOICE_A','UAT_INVOICE_B','UAT_EXPECTED_OUTSTANDING_A'];
 const missing=required.filter(k=>!e[k]);
 if(missing.length||e.UAT_FINANCE_WRITE_ACK!=='DISPOSABLE_UAT_ONLY'){
  console.error('NOT RUN: explicit disposable UAT write approval and isolated fixtures required:',missing.join(', '));process.exit(2);
@@ -25,16 +25,16 @@ const amount=minor(e.UAT_EXPECTED_OUTSTANDING_A);
 assert.ok(amount>=200n,'Invoice fixture needs at least 2.00 outstanding');
 const formatted=n=>(n/100n).toString()+'.'+(n%100n).toString().padStart(2,'0');
 const fetchApi=(path,options={})=>fetch(origin+path,{redirect:'manual',cache:'no-store',...options});
-async function login(organization,email,password){
- const response=await fetchApi('/api/auth/login',{method:'POST',headers:{origin,'Content-Type':'application/json'},body:JSON.stringify({organization,email,password})});
+async function login(username,password){
+ const response=await fetchApi('/api/auth/login',{method:'POST',headers:{origin,'Content-Type':'application/json'},body:JSON.stringify({username,password})});
  assert.equal(response.status,200,'UAT login required');
  const cookie=(response.headers.get('set-cookie')||'').split(';')[0];
  assert.match(cookie,/^vinca_session=/);
  return cookie;
 }
 const [cookieA,cookieB]=await Promise.all([
- login(e.UAT_ORG_A,e.UAT_EMAIL_A,e.UAT_PASSWORD_A),
- login(e.UAT_ORG_B,e.UAT_EMAIL_B,e.UAT_PASSWORD_B)
+ login(e.UAT_USERNAME_A,e.UAT_PASSWORD_A),
+ login(e.UAT_USERNAME_B,e.UAT_PASSWORD_B)
 ]);
 const paymentPath='/api/invoices/'+e.UAT_INVOICE_A+'/payments';
 const cross=await fetchApi(paymentPath,{headers:{cookie:cookieB}});

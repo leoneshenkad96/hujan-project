@@ -53,7 +53,7 @@ A green GitHub integration check means code compiles and static tests pass. It i
 - No UAT accounts, invoices, vendor payments, or customer records created. **Do not mistake an empty UAT branch for a successful live UAT.**
 
 ## Live smoke runner
-`node scripts/uat-http-smoke.mjs` requires `UAT_BASE_URL` and distinct `UAT_ORG_A/UAT_EMAIL_A/UAT_PASSWORD_A` and `UAT_ORG_B/UAT_EMAIL_B/UAT_PASSWORD_B` supplied securely at runtime, not committed to GitHub. It checks anonymous invoice denial, isolated login, event read, optional IDOR across tenant events, invalid-origin logout, and finance access.
+`node scripts/uat-http-smoke.mjs` requires `UAT_BASE_URL` and distinct `UAT_ORG_A/UAT_USERNAME_A/UAT_PASSWORD_A` and `UAT_ORG_B/UAT_USERNAME_B/UAT_PASSWORD_B` supplied securely at runtime, not committed to GitHub. Login uses username credentials. It checks anonymous invoice denial, isolated login, event read, optional IDOR across tenant events, invalid-origin logout, and finance access.
 
 - The script refuses hosts that do not indicate UAT/preview/localhost and rejects Kasapink.
 - Never connect a UAT website to the Vinca production Neon branch.

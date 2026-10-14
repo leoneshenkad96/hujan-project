@@ -6,7 +6,7 @@
  */
 import assert from 'node:assert/strict';
 const env=process.env;
-const required=['UAT_BASE_URL','UAT_ORG_A','UAT_EMAIL_A','UAT_PASSWORD_A','UAT_ORG_B','UAT_EMAIL_B','UAT_PASSWORD_B'];
+const required=['UAT_BASE_URL','UAT_ORG_A','UAT_USERNAME_A','UAT_PASSWORD_A','UAT_ORG_B','UAT_USERNAME_B','UAT_PASSWORD_B'];
 const missing=required.filter(x=>!env[x]);
 if(missing.length){console.error('UAT NOT RUN: missing required configuration:',missing.join(', '));process.exitCode=2}
 else{
@@ -23,8 +23,8 @@ else{
   const response=await fetch(path(url),{method,headers:{...(cookie?{cookie}:{}),origin,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),redirect:'manual',cache:'no-store'});
   return response;
  };
- const login=async(org,email,password)=>{
-  const r=await attempt('/api/auth/login',undefined,'POST',{organization:org,email,password});
+ const login=async(username,password)=>{
+  const r=await attempt('/api/auth/login',undefined,'POST',{username,password});
   assert.equal(r.status,200,'Login must succeed on UAT');
   const setCookie=r.headers.get('set-cookie')||'';
   const cookie=setCookie.split(';')[0];
@@ -35,7 +35,7 @@ else{
  const status=(label,value)=>console.log('PASS',label,'HTTP',value);
  const anonymous=await read('/api/invoices');
  assert.equal(anonymous.status,401,'Invoice list must not be public');status('anonymous finance denial',anonymous.status);
- const [cookieA,cookieB]=await Promise.all([login(env.UAT_ORG_A,env.UAT_EMAIL_A,env.UAT_PASSWORD_A),login(env.UAT_ORG_B,env.UAT_EMAIL_B,env.UAT_PASSWORD_B)]);
+ const [cookieA,cookieB]=await Promise.all([login(env.UAT_USERNAME_A,env.UAT_PASSWORD_A),login(env.UAT_USERNAME_B,env.UAT_PASSWORD_B)]);
  console.log('PASS two isolated UAT sessions established');
  const [a,b]=await Promise.all([read('/api/events?limit=10',cookieA),read('/api/events?limit=10',cookieB)]);
  assert.equal(a.status,200);assert.equal(b.status,200);
