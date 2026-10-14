@@ -12,8 +12,12 @@ export default function OwnerSetup(){
    const res=await fetch('/api/uat/owner-setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'leoneshenkad',setupCode:fields.get('setupCode'),password})});
    if(res.ok){setDone(true);e.currentTarget.reset();}
    else if(res.status===429)setMessage('Terlalu banyak percobaan. Coba lagi setelah 15 menit.');
-   else if(res.status===409)setMessage('Owner sudah diaktifkan atau setup tidak tersedia.');
-   else setMessage('Aktivasi gagal. Periksa kode setup dan konfigurasi UAT.');
+   else if(res.status===409)setMessage('Akun Owner sudah diaktifkan atau tidak tersedia untuk setup ulang. Coba masuk lewat halaman Login.');
+   else if(res.status===401)setMessage('Kode setup tidak cocok. Pastikan menggunakan kode UAT yang tepat, bukan password login.');
+   else if(res.status===404)setMessage('Aktivasi Owner tidak diaktifkan pada deployment ini.');
+   else if(res.status===503)setMessage('Layanan aktivasi atau koneksi database UAT belum tersedia. Hubungi administrator.');
+   else if(res.status===403)setMessage('Permintaan ditolak oleh pengamanan alamat website. Buka halaman Preview secara langsung di Safari.');
+   else setMessage('Aktivasi gagal. Silakan periksa input dan coba kembali.');
   }catch{setMessage('Gagal menghubungi server.')}finally{setBusy(false);}
  }
  const field={width:'100%',padding:13,border:'1px solid #e3dce6',borderRadius:10,fontSize:16,boxSizing:'border-box' as const};
