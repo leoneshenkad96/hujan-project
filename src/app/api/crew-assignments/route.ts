@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
-import {and,asc,eq} from 'drizzle-orm';
+import {and,asc,eq,ilike,or} from 'drizzle-orm';
 import {isTrustedOrigin} from '@/lib/security';
 import {getDatabase} from '@/db/client';
 import {crewAssignments,events,users} from '@/db/schema';
@@ -10,12 +10,18 @@ const fail=(error:string,status:number)=>NextResponse.json({error},{status,heade
 export async function GET(req:NextRequest){
  try{
   const a=await requirePermission('events:read');if(a.error)return fail(a.error,a.error==='unauthorized'?401:403);
-  const eventId=req.nextUrl.searchParams.get('eventId');if(!validUuid(eventId))return fail('Valid eventId required',400);
+  const params=req.nextUrl.searchParams,eventId=params.get('eventId'),page=Number(params.get('page')||'1'),limit=Number(params.get('limit')||'50'),q=(params.get('q')||'').trim();
+  if(!validUuid(eventId))return fail('Valid eventId required',400);
+  if(!Number.isSafeInteger(page)||page<1||page>10000||!Number.isSafeInteger(limit)||limit<1||limit>100||q.length>100)return fail('Invalid crew filters',400);
   const org=a.user.organizationId,db=getDatabase();
   const [event]=await db.select({id:events.id}).from(events).where(and(eq(events.id,eventId),eq(events.organizationId,org))).limit(1);
   if(!event)return fail('Event not found',404);
-  const items=await db.select().from(crewAssignments).where(and(eq(crewAssignments.organizationId,org),eq(crewAssignments.eventId,eventId))).orderBy(asc(crewAssignments.startAt),asc(crewAssignments.id)).limit(500);
-  return NextResponse.json({items},{headers:{'Cache-Control':'no-store'}});
+  const escaped=q.replace(/[\\%_]/g,'\\$&');
+  const items=await db.select({id:crewAssignments.id,userId:crewAssignments.userId,userName:users.name,role:crewAssignments.role,startAt:crewAssignments.startAt,endAt:crewAssignments.endAt})
+   .from(crewAssignments).innerJoin(users,and(eq(users.id,crewAssignments.userId),eq(users.organizationId,crewAssignments.organizationId)))
+   .where(and(eq(crewAssignments.organizationId,org),eq(crewAssignments.eventId,eventId),q?or(ilike(users.name,`%${escaped}%`),ilike(crewAssignments.role,`%${escaped}%`)):undefined))
+   .orderBy(asc(crewAssignments.startAt),asc(crewAssignments.id)).limit(limit+1).offset((page-1)*limit);
+  return NextResponse.json({items:items.slice(0,limit),page,limit,hasMore:items.length>limit},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Crew schedule unavailable',503)}
 }
 export async function POST(req:NextRequest){

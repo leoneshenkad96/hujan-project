@@ -24,6 +24,11 @@ test('crew cannot modify event, customer, task or invoice records', () => {
   assert.equal(can('crew',p),false,p);
  }
 });
-test('owner has the complete documented permission matrix', () => {
- for(const permission of Object.keys(PERMISSIONS))assert.equal(can('owner',permission),true,permission);
+test('client viewers can only read the isolated client portal',()=>{
+ assert.equal(can('client_viewer','client_portal:read'),true);
+ for(const permission of Object.keys(PERMISSIONS).filter(p=>p!=='client_portal:read'))assert.equal(can('client_viewer',permission),false,permission);
+});
+test('owner has all internal permissions but not the client portal role', () => {
+ for(const permission of Object.keys(PERMISSIONS).filter(p=>p!=='client_portal:read'))assert.equal(can('owner',permission),true,permission);
+ assert.equal(can('owner','client_portal:read'),false);
 });

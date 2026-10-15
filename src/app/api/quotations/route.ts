@@ -1,7 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
 import { isTrustedOrigin } from '@/lib/security';
 import {randomUUID} from 'node:crypto';
-import {and,eq,desc} from 'drizzle-orm';
+import {and,eq,desc,ilike,or} from 'drizzle-orm';
 import {getDatabase} from '@/db/client';
 import {events,quotations} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
@@ -11,10 +11,13 @@ export const runtime='nodejs';export const dynamic='force-dynamic';
 const fail=(error:string,status:number)=>NextResponse.json({error},{status,headers:{'Cache-Control':'no-store'}});
 export async function GET(req:NextRequest){
  try{const a=await requirePermission('clients:read');if(a.error)return fail(a.error,a.error==='unauthorized'?401:403);
- const eventId=req.nextUrl.searchParams.get('eventId');if(eventId&&!uuid.test(eventId))return fail('Invalid event ID',400);
+ const params=req.nextUrl.searchParams,eventId=params.get('eventId'),page=Number(params.get('page')||'1'),limit=Number(params.get('limit')||'20'),q=(params.get('q')||'').trim(),status=params.get('status');
+ if(eventId&&!uuid.test(eventId))return fail('Invalid event ID',400);
+ if(!Number.isSafeInteger(page)||page<1||page>10000||!Number.isSafeInteger(limit)||limit<1||limit>100||q.length>100||status&&!['draft','sent','accepted','rejected','expired'].includes(status))return fail('Invalid quotation filters',400);
  const org=a.user.organizationId;
- const rows=await getDatabase().select().from(quotations).where(and(eq(quotations.organizationId,org),eventId?eq(quotations.eventId,eventId):undefined)).orderBy(desc(quotations.createdAt),desc(quotations.id)).limit(100);
- return NextResponse.json({items:rows},{headers:{'Cache-Control':'no-store'}});
+ const escaped=q.replace(/[\\%_]/g,'\\$&');
+ const rows=await getDatabase().select().from(quotations).where(and(eq(quotations.organizationId,org),eventId?eq(quotations.eventId,eventId):undefined,status?eq(quotations.status,status as typeof quotations.$inferSelect.status):undefined,q?or(ilike(quotations.title,`%${escaped}%`),ilike(quotations.number,`%${escaped}%`)):undefined)).orderBy(desc(quotations.createdAt),desc(quotations.id)).limit(limit+1).offset((page-1)*limit);
+ return NextResponse.json({items:rows.slice(0,limit),page,limit,hasMore:rows.length>limit},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Quotations unavailable',503)}
 }
 export async function POST(req:NextRequest){

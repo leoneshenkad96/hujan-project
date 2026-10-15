@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import PasswordInput from '../password-input';
 
 const palette = { sky: '#99CDD8', mint: '#DAEBE3', cream: '#FDE8D3', sage: '#CFD6C4', ink: '#657166', deep: '#46524d' };
 
@@ -40,7 +41,7 @@ export default function Login() {
       <div style={{ display: 'grid', placeItems: 'center', marginBottom: 4 }}><img src="/branding/hujan-project-logo-transparent.png" alt="Hujan Project" style={{ width: 'min(100%, 300px)', height: 150, objectFit: 'contain' }} /></div>
       <div><h1 style={{ margin: 0, fontSize: 28, color: palette.deep }}>Vinca ERP</h1><p style={{ margin: '6px 0 0', color: palette.ink }}>Masuk ke workspace Event Organizer</p></div>
       <label htmlFor="login-username" style={{ color: palette.deep }}>Username<input id="login-username" required name="username" type="text" autoComplete="username" autoCapitalize="none" autoCorrect="off" style={field} /></label>
-      <label htmlFor="login-password" style={{ color: palette.deep }}>Password<input id="login-password" required name="password" type="password" autoComplete="current-password" style={field} /></label>
+      <label htmlFor="login-password" style={{ color: palette.deep }}>Password<PasswordInput id="login-password" required name="password" autoComplete="current-password" style={field} /></label>
       {error && <p role="alert" style={{ color: '#8d4c43', margin: 0 }}>{error}</p>}
       <button disabled={busy} type="submit" style={{ background: palette.ink, color: '#fffdf9', border: 0, padding: 13, borderRadius: 10, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1 }}>{busy ? 'Memproses...' : 'Masuk'}</button>
       <small style={{ color: palette.ink }}>Akun dikelola oleh administrator. Hubungi administrator untuk akses.</small>
