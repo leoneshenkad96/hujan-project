@@ -24,3 +24,23 @@
  .eo-closing-actions{align-items:stretch;flex-direction:column}
 }
 @media(prefers-reduced-motion:reduce){.eo-shell *{scroll-behavior:auto!important;transition:none!important}}
+.eo-brand .eo-mark{font-size:0;background:#242235 url('/branding/hujan-project-logo-transparent.png') center/contain no-repeat;width:52px;height:52px;border-radius:8px}
+.eo-shell{--sky:#99CDD8;--mint:#DAEBE3;--cream:#FDE8D3;--peach:#F3C8B2;--sage:#CFD6C4;--ink:#657166;--deep:#46524d;--border:#d9e3dc;background:var(--mint);color:var(--deep)}
+.eo-sidebar{background:var(--ink);color:var(--mint)}
+.eo-brand .eo-mark{background-color:var(--ink);background-image:url('/branding/hujan-project-mark.png')}
+.eo-brand span,.eo-navgroup,.eo-user small{color:var(--sage)}
+.eo-nav-item{color:var(--mint)}
+.eo-nav-item.active,.eo-nav-item:hover{background:var(--sky);color:var(--deep)}
+.eo-user{border-top-color:#87958b}
+.eo-top{border-bottom-color:var(--border);background:#fffdf9}
+.eo-primary{background:var(--sky);color:var(--deep)}
+.eo-secondary{border-color:var(--border);color:var(--deep);background:#fffdf9}
+.eo-link{color:var(--ink)}
+.eo-badge{background:var(--cream);color:var(--deep)}
+.eo-card,.eo-modal{border-color:var(--border);background:#fffdf9}
+.eo-progress{background:var(--sage)}
+.eo-progress>span{background:var(--sky)}
+.eo-demo-note{background:var(--cream);border-color:var(--peach);color:var(--deep)}
+.eo-toast{background:var(--ink)}
+.eo-shell[style]{background:var(--mint)!important}
+.eo-shell[style] a{color:var(--ink)!important}
