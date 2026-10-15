@@ -1,11 +1,12 @@
 import {NextRequest,NextResponse} from 'next/server';
 import { isTrustedOrigin } from '@/lib/security';
-import {and,desc,eq,ilike,or} from 'drizzle-orm';
+import {and,desc,eq,gte,ilike,lt,or} from 'drizzle-orm';
 import {randomUUID} from 'node:crypto';
 import {getDatabase} from '@/db/client';
 import {events,clients,users} from '@/db/schema';
 import {requirePermission} from '@/lib/auth';
 import {parseEvent,EVENT_STATUSES} from '@/lib/event-validation';
+import {parseEventDateRange} from '@/lib/event-date-range';
 export const runtime='nodejs';export const dynamic='force-dynamic';
 const fail=(error:string,status:number)=>NextResponse.json({error},{status,headers:{'Cache-Control':'no-store'}});
 export async function GET(req:NextRequest){
@@ -19,7 +20,9 @@ export async function GET(req:NextRequest){
  if(q.length>100)return fail('Search too long',400);
  const status=req.nextUrl.searchParams.get('status');
  if(status&&!EVENT_STATUSES.includes(status as typeof EVENT_STATUSES[number]))return fail('Invalid status',400);
- const criteria=and(eq(events.organizationId,organizationId),status?eq(events.status,status as typeof EVENT_STATUSES[number]):undefined,q?or(ilike(events.title,'%'+q.replace(/[\\%_]/g,'\\$&')+'%'),ilike(events.code,'%'+q.replace(/[\\%_]/g,'\\$&')+'%')):undefined);
+ const range=parseEventDateRange(req.nextUrl.searchParams.get('from'),req.nextUrl.searchParams.get('to'));
+ if(!range)return fail('Invalid event date range',400);
+ const criteria=and(eq(events.organizationId,organizationId),status?eq(events.status,status as typeof EVENT_STATUSES[number]):undefined,range.from?gte(events.eventDate,range.from):undefined,range.to?lt(events.eventDate,range.to):undefined,q?or(ilike(events.title,'%'+q.replace(/[\\%_]/g,'\\$&')+'%'),ilike(events.code,'%'+q.replace(/[\\%_]/g,'\\$&')+'%')):undefined);
  const rows=await getDatabase().select({id:events.id,code:events.code,title:events.title,eventDate:events.eventDate,type:events.type,venue:events.venue,status:events.status,progress:events.progress,contractValue:events.contractValue,approvedBudget:events.approvedBudget,clientId:events.clientId,projectManagerId:events.projectManagerId}).from(events).where(criteria).orderBy(desc(events.eventDate),desc(events.createdAt)).limit(limit+1).offset((page-1)*limit);
  return NextResponse.json({items:rows.slice(0,limit),page,limit,hasMore:rows.length>limit},{headers:{'Cache-Control':'no-store'}});
  }catch{return fail('Event service unavailable',503)}
