@@ -1,46 +1,160 @@
-# Vinca Event Organizer ERP
+# Hujan Project — Event Organizer ERP
 
-ERP untuk mengelola operasional Event Organizer (EO) dari prospek klien hingga proyek, vendor, rundown, invoice, pembayaran, dan pelaporan.
+Aplikasi ERP untuk mengelola pekerjaan Event Organizer, mulai dari prospek klien, perencanaan event, koordinasi kru dan vendor, hingga invoice, pembayaran, dan evaluasi profitabilitas.
 
-> **Status: development / Final Integration & UAT — production NO-GO.** Kode masih berupa rangkaian PR #01–#17 dan **belum digabungkan ke `main`**. Jangan memasukkan data klien atau transaksi sungguhan ke lingkungan UAT. CI yang lulus **bukan** bukti bahwa semua alur browser dan API telah diuji langsung.
+Repositori: [leoneshenkad96/hujan-project](https://github.com/leoneshenkad96/hujan-project)
+
+> Proyek masih dalam pengembangan dan pengujian UAT. Ketersediaan modul di kode bukan bukti bahwa seluruh alur telah lulus pengujian operasional atau siap digunakan di production.
+
+## Fitur
+
+| Modul | Cakupan |
+| --- | --- |
+| Dashboard | Ringkasan event, pekerjaan, dan metrik sesuai hak akses |
+| CRM & Clients | Klien, lead, tindak lanjut, dan konversi lead menjadi event |
+| Event Projects | Pengelolaan event, tanggal, PIC, progres, dan penutupan event |
+| Kalender Event | Tampilan jadwal event dan akses ke proyek terkait |
+| Tasks & Timeline | Penugasan dan pemantauan pekerjaan |
+| Crew Scheduling | Direktori kru dan penugasan ke event |
+| Vendor & PO | Data vendor dan purchase order |
+| Budget & RAB | Anggaran, biaya aktual, dan selisih anggaran |
+| Rundown & Show | Susunan acara dan status pelaksanaan |
+| Quotations & Contracts | Penawaran dan kontrak dengan status internal |
+| Finance & Invoices | Invoice, pembayaran bertahap, saldo, dan rekonsiliasi |
+| Profitability | Estimasi pendapatan, biaya, dan keuntungan event |
+| Users & Settings | Pengelolaan pengguna dan role |
+| Client Portal | Halaman khusus pengguna dengan role `client_viewer` |
+
+Nilai profitabilitas merupakan estimasi operasional. Komitmen biaya PO dan pengeluaran aktual perlu direkonsiliasi agar tidak dihitung ganda. Status kontrak internal tidak mewakili tanda tangan elektronik terverifikasi.
 
 ## Teknologi
 
-- **Frontend & API:** Next.js 15 App Router, React 19, TypeScript
-- **Database:** PostgreSQL di Neon, Drizzle ORM dan migrasi SQL berversi
-- **Autentikasi:** sesi cookie HttpOnly, password `scrypt`, role-based access control (RBAC)
-- **Hosting:** Vercel (proyek khusus `eo-erp`)
-- **Testing:** Node test runner, TypeScript, ESLint, Next.js build, pemeriksaan schema dan audit dependency
+- **Aplikasi dan API:** Next.js 15 App Router, React 19, TypeScript.
+- **Database:** PostgreSQL di Neon, Drizzle ORM, dan migrasi SQL berversi.
+- **Autentikasi:** username dan password, hash `scrypt`, sesi cookie HttpOnly, serta role-based access control (RBAC).
+- **Tampilan:** CSS dan Lucide React.
+- **Pemeriksaan:** Node.js test runner, TypeScript, ESLint, Drizzle Kit, dan GitHub Actions.
 
-Proyek ini **terpisah dari Kasapink ERP**, meskipun dikelola dalam akun Vercel yang sama. Jangan pernah menggunakan database, environment variable, atau proyek deploy Kasapink untuk Vinca.
-
-## Modul
-
-| Area | Fitur |
-|---|---|
-| Dashboard | Ringkasan event, progres, task dan metrik finance berdasarkan hak akses |
-| CRM | Data klien, lead, status prospek |
-| Event / Project | Event, PIC, progres, status dan tanggal |
-| Task | Penugasan dan pemantauan pekerjaan |
-| Vendor / Procurement | Vendor, purchase order, komitmen biaya |
-| Budget / RAB | Anggaran, pengeluaran aktual dan variance |
-| Rundown | Susunan acara dan status pelaksanaan |
-| Sales | Penawaran dan kontrak (status internal, **bukan tanda tangan elektronik yang terverifikasi**) |
-| Finance | Invoice, cicilan, pembayaran, saldo dan rekonsiliasi |
-| Reporting | Profitability estimasi, dashboard keuangan dan daftar anomali saldo |
-
-**Penting:** Nilai kontrak/profitabilitas adalah estimasi operasional, bukan otomatis laporan akuntansi final. PO commitment dan biaya aktual ditampilkan terpisah agar tidak dihitung ganda. Pembayaran memerlukan `Idempotency-Key` per transaksi untuk mengurangi risiko duplikasi ketika koneksi terputus.
+Nama paket internal masih `vinca-event-organizer-erp`. Sebagian dokumen dan variabel UAT juga masih memakai nama Vinca.
 
 ## Menjalankan secara lokal
 
-Persyaratan: **Node.js 22+**, npm dan akses ke **database Vinca development** (jangan pakai production).
+### 1. Persyaratan
+
+- Node.js **22+** dan npm.
+- Git.
+- Database Neon PostgreSQL khusus development atau UAT.
+- Akun aplikasi aktif untuk mengakses workspace.
+
+### 2. Unduh dan pasang dependensi
 
 ```bash
+git clone https://github.com/leoneshenkad96/hujan-project.git
+cd hujan-project
 npm ci
+```
+
+Repositori bersifat privat; akses GitHub yang sesuai diperlukan untuk melakukan clone.
+
+### 3. Siapkan environment
+
+Salin `.env.example` menjadi `.env.local`.
+
+**Windows PowerShell:**
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+**macOS / Linux:**
+
+```bash
+cp .env.example .env.local
+```
+
+Isi `DATABASE_URL` dengan connection string database development/UAT yang benar dan gunakan TLS. Next.js membaca `.env.local` saat aplikasi dijalankan. Jangan commit connection string, password, atau file environment berisi rahasia.
+
+`.env.example` juga memuat `AUTH_SECRET` sebagai placeholder lama; implementasi sesi saat ini tidak membaca variabel tersebut.
+
+### 4. Siapkan database dan akun
+
+Schema berada di [src/db/schema.ts](src/db/schema.ts), sedangkan migrasi tersimpan di [drizzle/](drizzle/).
+
+Untuk database development/UAT yang memang disiapkan untuk proyek ini, tinjau target dan SQL sebelum menerapkan migrasi:
+
+```bash
+npm run db:migrate
+```
+
+**Drizzle Kit membaca `DATABASE_URL` dari environment proses; konfigurasi saat ini tidak otomatis memuat `.env.local`.** Pastikan variabel tersedia di terminal atau runner yang menjalankan perintah migrasi.
+
+Tidak tersedia kredensial demo/default. Provisioning Owner UAT menggunakan [scripts/provision-owner-uat.mjs](scripts/provision-owner-uat.mjs), dengan `DATABASE_URL`, `VINCA_UAT_DB_HOST`, dan `VINCA_UAT_ACK=ISOLATED_UAT_ONLY` pada environment proses. Script meminta password melalui terminal. Ikuti [panduan bootstrap Windows](docs/UAT-OWNER-BOOTSTRAP-WINDOWS.md) dan periksa target database sebelum menjalankannya.
+
+### 5. Jalankan aplikasi
+
+```bash
 npm run dev
 ```
 
-Buka `http://localhost:3000`. Pemeriksaan sebelum PR:
+Buka [localhost:3000](http://localhost:3000), lalu masuk melalui `/login` menggunakan akun aktif.
+
+Untuk menjalankan hasil build lokal:
+
+```bash
+npm run build
+npm start
+```
+
+## Perintah pengembangan
+
+| Perintah | Fungsi |
+| --- | --- |
+| `npm run dev` | Menjalankan server development |
+| `npm run build` | Membuat build aplikasi |
+| `npm start` | Menjalankan hasil build |
+| `npm run typecheck` | Memeriksa tipe TypeScript |
+| `npm run lint` | Memeriksa kode dengan ESLint |
+| `npm test` | Menjalankan tes di direktori `tests/` |
+| `npm run db:check` | Memeriksa konsistensi migrasi Drizzle |
+| `npm run db:generate` | Menghasilkan migrasi dari perubahan schema |
+| `npm run db:migrate` | Menerapkan migrasi ke database target |
+| `npm run auth:hash` | Menjalankan utilitas hash password |
+
+## Struktur proyek
+
+```text
+.github/workflows/   Pemeriksaan otomatis GitHub Actions
+docs/                Dokumentasi modul, UAT, dan release
+drizzle/             Migrasi SQL, snapshot, dan journal
+public/              Aset statis dan branding
+scripts/             Utilitas autentikasi, UAT, dan preflight
+src/
+  app/               Halaman, workspace, dan API routes
+  db/                Koneksi database dan schema Drizzle
+  lib/               Autentikasi, permission, validasi, dan kalkulasi
+tests/               Tes otomatis
+```
+
+## Autentikasi dan akses
+
+Login menggunakan username dan password melalui `POST /api/auth/login`. Sesi disimpan melalui cookie HttpOnly; database menyimpan hash token sesi. Akses data dibatasi berdasarkan organisasi dan permission pada server.
+
+Role yang didefinisikan di [src/lib/permissions.ts](src/lib/permissions.ts):
+
+`owner`, `admin`, `project_manager`, `sales`, `finance`, `production`, `crew`, dan `client_viewer`.
+
+- Workspace internal: `/`.
+- Login: `/login`.
+- Pengelolaan pengguna: `/users`.
+- Portal klien: `/client-portal`.
+- Informasi sesi: `GET /api/auth/me`.
+- Permission pengguna: `GET /api/auth/permissions`.
+
+Login tidak memerlukan Resend atau OTP email. Role dan permission menjadi sumber aturan akses; menu yang terlihat dapat berbeda untuk setiap pengguna.
+
+## Validasi dan UAT
+
+Pemeriksaan lokal sebelum mengirim perubahan:
 
 ```bash
 node scripts/release-preflight.mjs
@@ -52,45 +166,41 @@ npm run db:check
 npm audit --omit=dev --audit-level=high
 ```
 
-Buat `.env.local` sendiri (jangan di-commit). Minimal `DATABASE_URL` harus menunjuk branch database Vinca **development / UAT yang benar**, dengan koneksi TLS. Migrasi hanya dijalankan pada branch database yang telah mendapat persetujuan untuk diubah; jangan otomatis menjalankan `db:migrate` ke production.
+Pemeriksaan di atas tidak menggantikan pengujian browser dan integrasi database.
 
-## Login Owner UAT (tanpa Resend)
+Utilitas UAT tambahan:
 
-Login mengikuti pola ERP Kasapink: **username + password**, bukan tautan email/OTP/Resend. Halaman `/login` mengirim kredensial ke `POST /api/auth/login`; autentikasi menggunakan password `scrypt`, sesi cookie `HttpOnly`, rate limiting, dan RBAC. Endpoint permintaan aktivasi email sudah dinonaktifkan (HTTP 410), sedangkan `/activate` mengarah ke `/login`.
+- [uat-http-smoke.mjs](scripts/uat-http-smoke.mjs): menguji login, sesi, CSRF, dan isolasi dua organisasi.
+- [uat-finance-concurrency.mjs](scripts/uat-finance-concurrency.mjs): menguji transaksi pembayaran paralel dan idempotency. Script ini dapat membuat pembayaran; gunakan fixture disposable dan `UAT_FINANCE_WRITE_ACK=DISPOSABLE_UAT_ONLY`.
+- [verify-uat-schema.mjs](scripts/verify-uat-schema.mjs): pemeriksaan schema UAT.
+- [audit-uat-integrity.mjs](scripts/audit-uat-integrity.mjs): utilitas audit integritas UAT.
 
-- **Organisasi UAT:** `vinca-uat`
-- **Username Owner UAT:** `leoneshenkad` (diturunkan dari email awal)
-- **Email kontak Owner:** `leoneshenkad@gmail.com`
-- **Status saat pemeriksaan 14 Oktober 2026:** belum aktif dan belum memiliki password; belum bisa login.
+Untuk integrasi pembayaran, gunakan `Idempotency-Key` per transaksi sesuai implementasi API. Laporan anomali saldo tersedia melalui `GET /api/finance/reconciliation` dengan permission `finance:read`.
 
-**Script provisioning privat tersedia:** `scripts/provision-owner-uat.mjs`. Jalankan hanya di terminal administrator dengan Node.js 22+, dependencies terpasang, dan variabel lokal `DATABASE_URL`, `VINCA_UAT_DB_HOST` (hostname Neon **UAT** persis dari URL koneksi), dan `VINCA_UAT_ACK=ISOLATED_UAT_ONLY`. Contoh Windows PowerShell: `node scripts/provision-owner-uat.mjs`. Script meminta password lewat terminal, menolak akun yang telah diprovisioning, memeriksa role/organisasi, dan tidak mencetak password atau hash. Pastikan URL koneksi adalah branch UAT, bukan production, dengan melihat Neon Console sebelum menjalankannya.
+## Dokumentasi
 
-**Provisioning Owner** harus dilakukan satu kali melalui jalur administrator privat terhadap database **Neon UAT** saja. Password dipilih dan dimasukkan sendiri melalui input tersembunyi, tidak ditulis di chat, GitHub, PR, log, maupun query SQL publik. Gunakan `scripts/hash-password.mjs` untuk menghasilkan hash `scrypt` yang kompatibel, lalu simpan hanya hash-nya dan aktifkan user yang benar sesudah memastikan target branch UAT. Verifikasi username unik secara global, role `owner`, dan login sesudah provisioning. Jangan membuat password default atau mengaktifkan Owner tanpa password.
+| Topik | Panduan |
+| --- | --- |
+| Database | [DATABASE.md](docs/DATABASE.md) |
+| Autentikasi | [AUTH.md](docs/AUTH.md) |
+| CRM | [CRM.md](docs/CRM.md) |
+| Budget | [BUDGET.md](docs/BUDGET.md) |
+| Procurement | [PROCUREMENT.md](docs/PROCUREMENT.md) |
+| Rundown | [RUNDOWN.md](docs/RUNDOWN.md) |
+| Penawaran dan kontrak | [SALES-DOCUMENTS.md](docs/SALES-DOCUMENTS.md) |
+| Invoice | [INVOICES.md](docs/INVOICES.md) |
+| Profitabilitas | [PROFITABILITY.md](docs/PROFITABILITY.md) |
+| Dashboard | [DASHBOARD.md](docs/DASHBOARD.md) |
+| QA dan keamanan | [QA-SECURITY.md](docs/QA-SECURITY.md) |
+| Integrasi dan UAT | [FINAL-INTEGRATION-UAT.md](docs/FINAL-INTEGRATION-UAT.md) |
+| Prosedur release | [RELEASE-RUNBOOK.md](docs/RELEASE-RUNBOOK.md) |
 
-Preview perlu terhubung ke branch UAT yang sesuai dan memakai build terbaru. Konfigurasi `RESEND_API_KEY`, `ACTIVATION_FROM_EMAIL`, `UAT_ACTIVATION_ENABLED`, dan `UAT_ACTIVATION_BASE_URL` **tidak diperlukan untuk login username/password**; bersihkan konfigurasi lama secara terkontrol setelah memeriksa tidak ada fitur lain yang menggunakannya. Tidak perlu merge/deploy production untuk uji login Preview.
+Sebagian dokumen mencatat keadaan pada tahap PR sebelumnya. Cocokkan informasi historis seperti status akun, jumlah migrasi terpasang, URL repositori, dan deployment dengan kode serta environment target saat ini.
 
-## UAT dan kualitas
+## Deployment
 
-- PR integrasi: [#17 — Final Integration & UAT](https://github.com/leoneshenkad96/Event-Organizer-ERP-/pull/17) (Draft, tidak boleh di-merge sebelum sign-off).
-- Dokumen skenario dan blocker: [Final Integration & UAT](docs/FINAL-INTEGRATION-UAT.md).
-- Prosedur release: [Production Release Runbook](docs/RELEASE-RUNBOOK.md).
-- `scripts/uat-http-smoke.mjs`: smoke test login, session, CSRF dan isolasi dua organisasi; perlu dua akun aktif khusus UAT.
-- `scripts/uat-finance-concurrency.mjs`: pengujian tulis transaksi paralel dan idempotency key. **Berpotensi membuat pembayaran**; wajib memakai invoice fixture disposable, dua organisasi, dan `UAT_FINANCE_WRITE_ACK=DISPOSABLE_UAT_ONLY`. Runner ini **tidak berjalan otomatis di CI**.
-- `GET /api/finance/reconciliation`: laporan anomali pembayaran **read-only** (hak akses `finance:read`).
+Aplikasi ditujukan untuk deployment Next.js di Vercel dengan database Neon PostgreSQL. Pisahkan environment development, Preview/UAT, dan production beserta kredensial databasenya.
 
-CI menjalankan tes statis/unit, build dan audit dependensi. **Belum lulus UAT langsung** untuk dua organisasi, pembayaran paralel, browser iPhone/tablet/desktop, dan pemulihan backup. Pada pemeriksaan 14 Oktober 2026, Neon UAT telah mencatat 19 migrasi (0000–0018). Status development/production harus diverifikasi secara terpisah sebelum release.
+Sebelum release production, verifikasi login, RBAC, isolasi organisasi, pembayaran paralel, rekonsiliasi keuangan, tampilan browser, serta backup/restore. Ikuti [release runbook](docs/RELEASE-RUNBOOK.md) dan pastikan persetujuan release serta target infrastruktur sudah benar.
 
-## Git dan deployment
-
-Pekerjaan terdiri dari **stacked PR #01 → #16**, diikuti **PR #17** (`integration/final-uat` berbasis `feature/16-release-readiness`). Review dan gabungkan sesuai urutan dependensi setelah UAT disetujui; hasil CI tiap PR sendiri tidak otomatis menjamin hasil gabungan pada `main`.
-
-- Vercel project: `eo-erp` (terhubung dengan `leoneshenkad96/Event-Organizer-ERP-`).
-- Database UAT: Neon branch `br-long-wildflower-b3nsciay`, project `fancy-cell-64250119`. **Jangan diarahkan ke Vinca production.**
-- Deployment Preview sebelumnya pernah `READY`, tetapi **commit terbaru belum di-redeploy** akibat batas kuota harian Vercel.
-- Tidak ada izin implisit untuk merge ke `main`, menjalankan migrasi production, atau melakukan deployment production.
-
-## Persyaratan sebelum production GO
-
-Akun Owner diprovisioning dengan password pribadi secara aman dan login berhasil; dua organisasi dengan role berbeda sudah diuji (akses 401/403/404 dan IDOR); pembayaran paralel/idempotency, pembukuan dan audit direkonsiliasi; UI responsif dan aksesibilitas diuji; backup/restore diuji pada branch disposable; keamanan proxy, header dan dependensi ditinjau; lalu mendapat persetujuan owner untuk merge, migrasi, dan deploy.
-
-**Disusun dan dikembangkan untuk Vinca Event Organizer ERP.**
+README ini menjelaskan kode di repositori; status deployment, provisioning akun, dan kelulusan UAT live tidak diverifikasi melalui pembaruan dokumentasi ini.
