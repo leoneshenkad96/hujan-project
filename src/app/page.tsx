@@ -6,5 +6,5 @@ export default async function Home(){
  const user=await currentUser();
  if(!user) redirect('/login');
  if(user.role==='client_viewer') redirect('/client-portal');
- return <Workspace role={user.role} />;
+ return <Workspace role={user.role} userName={user.username} />;
 }
