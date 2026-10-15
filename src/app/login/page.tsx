@@ -37,8 +37,8 @@ export default function Login() {
   const field = { display: 'block', width: '100%', padding: 13, marginTop: 7, border: `1px solid ${palette.sage}`, borderRadius: 10, boxSizing: 'border-box' as const, background: '#fffdf9', color: palette.deep };
 
   return <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24, background: `linear-gradient(135deg, ${palette.mint} 0%, ${palette.cream} 52%, ${palette.sky} 100%)` }}>
-    <form onSubmit={submit} style={{ width: 'min(100%, 410px)', padding: 30, borderRadius: 24, background: '#fffdf9f2', border: `1px solid ${palette.sage}`, boxShadow: '0 24px 70px #65716638', display: 'grid', gap: 16 }}>
-      <div style={{ display: 'grid', placeItems: 'center', marginBottom: 4, padding: '18px 16px', borderRadius: 18, background: `linear-gradient(145deg, ${palette.ink} 0%, ${palette.deep} 100%)`, boxShadow: 'inset 0 1px #ffffff30, 0 12px 24px #46524d26' }}><img src="/branding/hujan-project-logo-transparent.png" alt="Hujan Project" style={{ width: 'min(100%, 300px)', height: 150, objectFit: 'contain' }} /></div>
+    <form onSubmit={submit} style={{ width: 'min(100%, 410px)', padding: 30, borderRadius: 24, background: '#fffdf9eF', border: `1px solid ${palette.sage}`, boxShadow: '0 24px 70px #65716638', display: 'grid', gap: 16 }}>
+      <div style={{ display: 'grid', placeItems: 'center', marginBottom: 4 }}><img src="/branding/hujan-project-logo-transparent.png" alt="Hujan Project" style={{ width: 'min(100%, 300px)', height: 150, objectFit: 'contain' }} /></div>
       <div><h1 style={{ margin: 0, fontSize: 28, color: palette.deep }}>Vinca ERP</h1><p style={{ margin: '6px 0 0', color: palette.ink }}>Masuk ke workspace Event Organizer</p></div>
       <label htmlFor="login-username" style={{ color: palette.deep }}>Username<input id="login-username" required name="username" type="text" autoComplete="username" autoCapitalize="none" autoCorrect="off" style={field} /></label>
       <label htmlFor="login-password" style={{ color: palette.deep }}>Password<PasswordInput id="login-password" required name="password" autoComplete="current-password" style={field} /></label>

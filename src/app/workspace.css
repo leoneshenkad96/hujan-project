@@ -34,7 +34,7 @@
 @media(max-width:680px){.eo-title-actions{width:100%}.eo-title-actions>.eo-primary{flex:1;justify-content:center}.eo-rundown-item{grid-template-columns:53px 15px minmax(0,1fr);gap:8px}.eo-rundown-time b{font-size:11px}.eo-rundown-time span{font-size:9px}.eo-rundown-body{padding:10px}.eo-rundown-heading{flex-direction:column}.eo-rundown-heading select{max-width:100%;width:100%;min-height:38px}.eo-crew-day{grid-template-columns:1fr;gap:10px}.eo-crew-day-label{flex-direction:row;justify-content:space-between}.eo-crew-assignment{align-items:flex-start;flex-direction:column;gap:7px}.eo-crew-time{min-width:0}}
 .eo-shell{--sky:#99CDD8;--mint:#DAEBE3;--cream:#FDE8D3;--peach:#F3C8B2;--sage:#CFD6C4;--ink:#657166;--deep:#46524d;--border:#d9e3dc;background:var(--mint);color:var(--deep)}
 .eo-sidebar{background:var(--ink);color:var(--mint)}
-.eo-brand-logo{display:block;width:58px;height:58px;object-fit:contain;border-radius:10px;background:#fffdf9;padding:4px;box-shadow:0 6px 16px #46524d30}
+.eo-brand-logo{display:block;width:52px;height:52px;object-fit:contain;border-radius:8px}
 .eo-brand span,.eo-navgroup,.eo-user small{color:var(--sage)}
 .eo-nav-item{color:var(--mint)}
 .eo-nav-item.active,.eo-nav-item:hover{background:var(--sky);color:var(--deep)}
